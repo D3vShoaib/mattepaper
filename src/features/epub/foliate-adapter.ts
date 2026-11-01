@@ -193,6 +193,10 @@ export async function createReader(
   const onLoad = (event: Event) => {
     const doc = (event as CustomEvent<{ doc: Document }>).detail.doc
     if (documentListeners.has(doc)) return
+    const noSelect = doc.createElement("style")
+    noSelect.textContent =
+      "html, body, body * { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }"
+    doc.head?.append(noSelect)
     const stop = listenForReaderTaps(doc, onTap, container)
     const window = doc.defaultView
     const release = () => {

@@ -255,7 +255,7 @@ export function ReaderPage() {
   const navVisible = ready && showBar
   return (
     <section
-      className="fixed inset-0 flex flex-col"
+      className="fixed inset-0 flex flex-col select-none [-webkit-touch-callout:none]"
       style={{
         backgroundColor: settings.backgroundColor ?? colors.background,
         color: colors.foreground,
