@@ -2,6 +2,10 @@
   "name": "mattepaper",
   "private": true,
   "version": "0.0.1",
+  "packageManager": "pnpm@11.2.2",
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
