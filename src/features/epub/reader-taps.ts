@@ -1,11 +1,15 @@
-export type TapAction = "previous" | "next" | "toggle" | null
+import type { TapZone } from "@/stores/reader-settings"
 
-export function getTapAction(
+export type ReaderInteraction =
+  | { type: "zone"; zone: TapZone }
+  | { type: "shortcut"; action: "previous" | "next" | "toggle" }
+
+export function getTapZone(
   x: number,
   y: number,
   width: number,
   height: number
-): TapAction {
+): TapZone | null {
   if (width <= 0 || height <= 0 || x < 0 || y < 0 || x > width || y > height)
     return null
   const horizontal = x / width
@@ -16,14 +20,14 @@ export function getTapAction(
     vertical >= 0.35 &&
     vertical <= 0.65
   )
-    return "toggle"
-  if (vertical < 0.5) return null
-  return horizontal < 0.5 ? "previous" : "next"
+    return "center"
+  if (vertical < 0.5) return horizontal < 0.5 ? "topLeft" : "topRight"
+  return horizontal < 0.5 ? "bottomLeft" : "bottomRight"
 }
 
 export function listenForReaderTaps(
   doc: Document,
-  onAction: (action: Exclude<TapAction, null>) => void,
+  onAction: (interaction: ReaderInteraction) => void,
   host?: HTMLElement
 ) {
   let start: { x: number; y: number; time: number } | null = null
@@ -60,19 +64,19 @@ export function listenForReaderTaps(
     const hostRect = host?.getBoundingClientRect()
     const action =
       frameRect && hostRect
-        ? getTapAction(
+        ? getTapZone(
             frameRect.left + event.clientX - hostRect.left,
             frameRect.top + event.clientY - hostRect.top,
             hostRect.width,
             hostRect.height
           )
-        : getTapAction(
+        : getTapZone(
             event.clientX,
             event.clientY,
             doc.documentElement.clientWidth,
             doc.documentElement.clientHeight
           )
-    if (action) onAction(action)
+    if (action) onAction({ type: "zone", zone: action })
   }
   const cancel = () => {
     start = null
@@ -101,7 +105,7 @@ export function listenForReaderTaps(
             : null
     if (action) {
       event.preventDefault()
-      onAction(action)
+      onAction({ type: "shortcut", action })
     }
   }
   doc.addEventListener("keydown", keydown)

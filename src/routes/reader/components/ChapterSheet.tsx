@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { LogsIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@/components/ui/button"
@@ -61,18 +60,21 @@ export function ChapterSheet({
   chapters,
   current,
   onNavigate,
+  open,
+  onOpenChange,
 }: {
   chapters: TocEntry[]
   current?: string
   onNavigate: (href: string) => Promise<void>
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }) {
-  const [open, setOpen] = useState(false)
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger
         render={
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon-lg"
             aria-label="Table of contents"
           />
@@ -91,7 +93,7 @@ export function ChapterSheet({
               current={current}
               onSelect={(href) => {
                 void onNavigate(href)
-                  .then(() => setOpen(false))
+                  .then(() => onOpenChange(false))
                   .catch(() => {})
               }}
             />

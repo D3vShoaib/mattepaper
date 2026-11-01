@@ -1,5 +1,9 @@
-import { listenForReaderTaps, type TapAction } from "./reader-taps"
-import { readerThemes, type ReaderSettings } from "@/stores/reader-settings"
+import { listenForReaderTaps, type ReaderInteraction } from "./reader-taps"
+import type { ReaderAppearance, ReaderSettings } from "@/stores/reader-settings"
+import {
+  getReaderPalette,
+  type ReaderPalette,
+} from "@/features/reading/reader-palette"
 // Foliate is kept behind this adapter; its upstream JavaScript has no TypeScript declarations.
 // @ts-expect-error Foliate is a JavaScript submodule without type declarations.
 import { makeBook } from "../../../packages/foliate-js/view.js"
@@ -33,10 +37,20 @@ export interface ReaderView extends HTMLElement {
   next(): Promise<void>
   close(): void
   book: FoliateBook
-  lastLocation?: { cfi?: string }
+  lastLocation?: Relocation
   goTo(href: string): Promise<unknown>
   isFixedLayout?: boolean
-  renderer: HTMLElement & { setStyles?: (styles: string) => void }
+  renderer: HTMLElement & {
+    setStyles?: (styles: string) => void
+    getContents?: () => Array<{ doc: Document }>
+  }
+}
+
+export async function waitForReaderContent(view: ReaderView) {
+  const documents = view.renderer.getContents?.().map(({ doc }) => doc) ?? []
+  await Promise.allSettled(documents.map(({ fonts }) => fonts.ready))
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 }
 function textValue(value: MetadataValue): string {
   if (typeof value === "string") return value
@@ -81,29 +95,75 @@ export async function parseEpub(file: File) {
 }
 export function applyReaderSettings(
   view: Pick<ReaderView, "renderer" | "isFixedLayout">,
-  settings: ReaderSettings
+  settings: ReaderAppearance,
+  fontUrl?: string,
+  palette: ReaderPalette = getReaderPalette(),
+  viewportWidth?: number
 ) {
   if (view.isFixedLayout) return
-  const colors = readerThemes[settings.theme]
+  const colors = palette
+  const width = Math.max(
+    1,
+    Math.floor(
+      viewportWidth ||
+        view.renderer.getBoundingClientRect().width ||
+        window.innerWidth
+    )
+  )
+  const spreadWidth =
+    settings.columns === "auto" && width >= 900 ? Math.ceil(width / 2) : width
   const attributes: Record<string, string> = {
-    "max-column-count": "1",
-    "max-inline-size": "720px",
-    "margin-top": `${settings.margin}px`,
-    "margin-bottom": `${Math.max(settings.margin, 56)}px`,
-    "margin-left": `${settings.margin}px`,
-    "margin-right": `${settings.margin}px`,
+    flow: settings.mode,
+    gap: "0%",
+    "max-column-count": settings.columns === "1" ? "1" : "2",
+    "max-inline-size": `${spreadWidth}px`,
+    "column-gap": `${settings.columnGap}px`,
+    "margin-top": `${settings.marginTop}px`,
+    "margin-bottom": `${settings.marginBottom}px`,
+    "margin-left": `${settings.marginLeft}px`,
+    "margin-right": `${settings.marginRight}px`,
   }
   for (const [name, value] of Object.entries(attributes)) {
     if (view.renderer.getAttribute(name) !== value)
       view.renderer.setAttribute(name, value)
   }
-  const family =
-    settings.font === "sans" ? "Arial, sans-serif" : "Georgia, serif"
+  const customFont =
+    settings.font === "custom" && fontUrl?.startsWith("blob:")
+      ? fontUrl
+      : undefined
+  const family = customFont
+    ? '"Mattepaper Custom", Georgia, serif'
+    : settings.font === "sans"
+      ? "Arial, sans-serif"
+      : "Georgia, serif"
+  const fontFace = customFont
+    ? `@font-face { font-family: "Mattepaper Custom"; src: url("${customFont}"); font-style: normal; font-weight: normal; }`
+    : ""
+  const foreground = settings.fontColor ?? colors.foreground
+  const italic =
+    !settings.respectPublisherFormatting && settings.italic
+      ? "font-style: italic !important;"
+      : ""
+  const underline =
+    !settings.respectPublisherFormatting && settings.underline
+      ? "text-decoration-line: underline !important;"
+      : ""
+  const smoothing =
+    settings.fontSmoothing === "antialiased"
+      ? "-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;"
+      : ""
+  const shadow = settings.shadowEnabled
+    ? `text-shadow: ${settings.shadowX}px ${settings.shadowY}px ${settings.shadowBlur}px ${settings.shadowColor} !important;`
+    : ""
   view.renderer.setStyles?.(`
-    html, body { background: ${colors.background} !important; color: ${colors.foreground} !important; }
-    body { font-family: ${family} !important; font-size: ${settings.fontSize}px !important; line-height: ${settings.lineHeight} !important; }
+    ${fontFace}
+    html, body { background: ${settings.backgroundColor ?? colors.background} !important; color: ${foreground} !important; }
+    body { padding-left: 0 !important; padding-right: 0 !important; font-family: ${family} !important; font-size: ${(settings.fontSize * settings.fontScale) / 100}px !important; font-weight: ${settings.fontWeight} !important; line-height: ${settings.lineHeight} !important; letter-spacing: ${settings.letterSpacing}em !important; word-spacing: ${settings.wordSpacing}em !important; ${italic} ${underline} ${smoothing} ${shadow} }
+    body p, body li, body blockquote { font-family: ${family} !important; font-size: ${(settings.fontSize * settings.fontScale) / 100}px !important; font-weight: ${settings.fontWeight} !important; letter-spacing: ${settings.letterSpacing}em !important; word-spacing: ${settings.wordSpacing}em !important; ${italic} ${shadow} }
+    body h1, body h2, body h3, body h4, body h5, body h6 { font-family: ${family} !important; ${italic} ${shadow} }
     body :not(a) { color: inherit !important; }
-    p, li, blockquote { line-height: ${settings.lineHeight} !important; }
+    p, li, blockquote { line-height: ${settings.lineHeight} !important; text-align: ${settings.alignment} !important; hyphens: ${settings.hyphenation ? "auto" : "manual"} !important; -webkit-hyphens: ${settings.hyphenation ? "auto" : "manual"} !important; }
+    p { margin-block-end: ${settings.paragraphSpacing}em !important; text-indent: ${settings.textIndent}em !important; }
     a { color: ${colors.link} !important; }
   `)
 }
@@ -112,7 +172,7 @@ export async function createReader(
   container: HTMLElement,
   lastLocation: string | undefined,
   onRelocate: (detail: Relocation) => void,
-  onTap: (action: Exclude<TapAction, null>) => void,
+  onTap: (interaction: ReaderInteraction) => void,
   settings: ReaderSettings
 ) {
   const book = (await makeBook(file)) as FoliateBook
