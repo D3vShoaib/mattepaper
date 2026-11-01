@@ -1,16 +1,61 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { GitbookIcon, Search01Icon } from "@hugeicons/core-free-icons"
+import { navDirection } from "@/lib/nav-direction"
+import { Add01Icon, Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link } from "react-router"
 import { liveQuery } from "dexie"
-import { Button } from "@/components/ui/button"
 import { db, type Book } from "@/db"
 import { importBook } from "@/features/library/import-book"
+import { PwaInstallButton } from "@/features/pwa/PwaInstallButton"
 import { ViewOptionsDrawer } from "@/routes/bookshelf/components/ViewOptionsDrawer"
 import {
   normalizeColumns,
   useBookshelfSettings,
 } from "@/stores/bookshelf-settings"
+
+const MARQUEE_GAP = 32
+
+function Marquee({ children }: { children: string }) {
+  const box = useRef<HTMLDivElement>(null)
+  const text = useRef<HTMLSpanElement>(null)
+  const [overflow, setOverflow] = useState(0)
+  useEffect(() => {
+    const measure = () => {
+      if (!box.current || !text.current) return
+      const width = text.current.getBoundingClientRect().width
+      setOverflow(width > box.current.clientWidth + 1 ? width : 0)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    if (box.current) observer.observe(box.current)
+    return () => observer.disconnect()
+  }, [children])
+  return (
+    <div
+      ref={box}
+      className={`overflow-hidden whitespace-nowrap ${overflow ? "marquee-fade" : ""}`}
+    >
+      <div
+        className={overflow ? "marquee-track flex w-max" : "flex w-max"}
+        style={
+          overflow
+            ? ({
+                "--marquee-distance": `-${overflow + MARQUEE_GAP}px`,
+                "--marquee-duration": `${(overflow + MARQUEE_GAP) / 30}s`,
+              } as React.CSSProperties)
+            : undefined
+        }
+      >
+        <span ref={text}>{children}</span>
+        {overflow > 0 && (
+          <span aria-hidden="true" style={{ marginInlineStart: MARQUEE_GAP }}>
+            {children}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function Cover({ book }: { book: Book }) {
   const [url, setUrl] = useState<string>()
@@ -39,6 +84,11 @@ function Cover({ book }: { book: Book }) {
         </div>
       )}
       {book.progress > 0 && (
+        <span className="absolute bottom-2 left-1 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
+          {Math.round(book.progress * 100)}%
+        </span>
+      )}
+      {book.progress > 0 && (
         <div className="absolute inset-x-0 bottom-0 h-1 bg-background/60">
           <div
             className="h-full bg-primary"
@@ -50,11 +100,33 @@ function Cover({ book }: { book: Book }) {
   )
 }
 
+function BookSkeleton({ layout }: { layout: "Grid" | "List" }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={
+        layout === "Grid"
+          ? "min-w-0 animate-in fade-in duration-300"
+          : "flex animate-in items-center gap-4 p-2 duration-300 fade-in"
+      }
+    >
+      <div className={layout === "List" ? "w-16 shrink-0" : ""}>
+        <div className="aspect-[2/3] animate-pulse rounded-md bg-secondary-foreground/10" />
+      </div>
+      <div className={layout === "Grid" ? "mt-2 space-y-2" : "flex-1 space-y-2"}>
+        <div className="h-3 w-3/4 animate-pulse rounded bg-secondary-foreground/10" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-secondary-foreground/10" />
+      </div>
+    </div>
+  )
+}
+
 export function BookshelfPage() {
   const [books, setBooks] = useState<Book[]>()
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [importing, setImporting] = useState(false)
+  const [pendingImports, setPendingImports] = useState(0)
   const [search, setSearch] = useState("")
   const filter = useBookshelfSettings((state) => state.filter)
   const sort = useBookshelfSettings((state) => state.sort)
@@ -103,6 +175,7 @@ export function BookshelfPage() {
   async function handleImport(files: FileList | null) {
     if (!files?.length || importing) return
     setImporting(true)
+    setPendingImports(files.length)
     setError("")
     setNotice("")
     let imported = 0,
@@ -115,6 +188,7 @@ export function BookshelfPage() {
       } catch {
         failures.push(file.name)
       }
+      setPendingImports((n) => Math.max(0, n - 1))
     }
     if (imported || duplicates)
       setNotice(
@@ -131,11 +205,21 @@ export function BookshelfPage() {
       setError(
         `Could not import ${failures.join(", ")}. Check the EPUB file and available browser storage.`
       )
+    setPendingImports(0)
     setImporting(false)
   }
   const count = Number(normalizeColumns(columns))
+  const loaded = Boolean(books)
+  const gridClass =
+    layout === "Grid"
+      ? "books-grid mt-6 grid gap-4 sm:gap-6"
+      : "mt-6 flex flex-col gap-3"
+  const gridStyle =
+    layout === "Grid"
+      ? ({ "--book-columns": count } as React.CSSProperties)
+      : undefined
   return (
-    <section className="m-2 min-h-[calc(100svh-1rem)] rounded-xl bg-muted p-3 dark:bg-[color-mix(in_oklch,var(--background)_75%,var(--muted))]">
+    <section className="bookshelf-shell m-2 flex flex-col rounded-xl bg-muted p-3 dark:bg-[color-mix(in_oklch,var(--background)_75%,var(--muted))]">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="relative min-w-0 flex-1 basis-48 sm:max-w-64">
           <HugeiconsIcon
@@ -152,6 +236,7 @@ export function BookshelfPage() {
           />
         </div>
         <ViewOptionsDrawer />
+        <PwaInstallButton />
         <input
           ref={fileInput}
           type="file"
@@ -164,22 +249,6 @@ export function BookshelfPage() {
             e.target.value = ""
           }}
         />
-        <Button
-          size="lg"
-          className="gap-2"
-          aria-label="Import books"
-          disabled={importing}
-          onClick={() => fileInput.current?.click()}
-        >
-          <HugeiconsIcon icon={GitbookIcon} />
-          <span
-            aria-hidden="true"
-            className="hidden h-4 w-px bg-primary-foreground/30 sm:block"
-          />
-          <span className="hidden sm:inline">
-            {importing ? "Importing…" : "Import"}
-          </span>
-        </Button>
       </div>
       <div aria-live="polite" className="mt-3 text-sm text-muted-foreground">
         {importing ? "Importing books…" : notice}
@@ -189,56 +258,47 @@ export function BookshelfPage() {
           {error}
         </p>
       )}
-      {!books && !error && (
-        <div
-          aria-label="Loading library"
-          className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-4"
-        >
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="space-y-3">
-              <div className="aspect-[2/3] animate-pulse rounded-md bg-secondary" />
-              <div className="h-3 w-3/4 animate-pulse rounded bg-secondary" />
-              <div className="h-3 w-1/2 animate-pulse rounded bg-secondary" />
-            </div>
-          ))}
-        </div>
-      )}
-      {books && books.length === 0 && !importing && (
-        <div className="mx-auto flex min-h-[50vh] max-w-sm flex-col items-center justify-center text-center">
-          <h1 className="font-heading text-xl font-medium">
-            Your bookshelf is empty
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Import an EPUB to start reading. Your books are saved on this
-            device.
-          </p>
-          <Button className="mt-5" onClick={() => fileInput.current?.click()}>
-            Import an EPUB
-          </Button>
-        </div>
-      )}
-      {books && books.length > 0 && visibleBooks.length === 0 && (
+      {loaded && books!.length > 0 && visibleBooks.length === 0 && (
         <p className="mt-10 text-center text-sm text-muted-foreground">
           No books match your search or filter.
         </p>
       )}
-      {books && visibleBooks.length > 0 && (
+      {loaded && (
         <div
-          className={
-            layout === "Grid"
-              ? "books-grid mt-6 grid gap-4 sm:gap-6"
-              : "mt-6 flex flex-col gap-3"
-          }
-          style={
-            layout === "Grid"
-              ? ({ "--book-columns": count } as React.CSSProperties)
-              : undefined
-          }
+          className={`${gridClass} animate-in duration-300 fade-in`}
+          style={gridStyle}
         >
+          <button
+            type="button"
+            disabled={importing}
+            onClick={() => fileInput.current?.click()}
+            className={
+              layout === "Grid"
+                ? "min-w-0 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                : "flex items-center gap-4 rounded-md p-2 text-left outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            }
+          >
+            <div className={layout === "List" ? "w-16 shrink-0" : ""}>
+              <div className="flex aspect-[2/3] items-center justify-center rounded-md border border-dashed border-border bg-background/40 text-muted-foreground">
+                <HugeiconsIcon icon={Add01Icon} className="size-6" />
+              </div>
+            </div>
+            <div className={layout === "Grid" ? "mt-2 min-w-0" : "min-w-0"}>
+              <h2 className="truncate text-sm font-medium">Add EPUB</h2>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                From your device
+              </p>
+            </div>
+          </button>
+          {Array.from({ length: pendingImports }, (_, i) => (
+            <BookSkeleton key={`importing-${i}`} layout={layout} />
+          ))}
           {visibleBooks.map((book) => (
             <Link
               key={book.id}
               to={`/read/${book.id}`}
+              viewTransition
+              onClick={navDirection("forward")}
               className={
                 layout === "Grid"
                   ? "min-w-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -249,15 +309,12 @@ export function BookshelfPage() {
                 <Cover book={book} />
               </div>
               <div className={layout === "Grid" ? "mt-2 min-w-0" : "min-w-0"}>
-                <h2 className="truncate text-sm font-medium">{book.title}</h2>
+                <h2 className="text-sm font-medium">
+                  <Marquee>{book.title}</Marquee>
+                </h2>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {book.author}
                 </p>
-                {book.progress > 0 && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {Math.round(book.progress * 100)}% read
-                  </p>
-                )}
               </div>
             </Link>
           ))}

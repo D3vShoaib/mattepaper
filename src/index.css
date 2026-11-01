@@ -132,5 +132,74 @@
     @apply font-sans;
     }
 }
-.books-grid { grid-template-columns: repeat(var(--book-columns), minmax(0, 1fr)); }
+.app-shell {
+  min-height: 100svh;
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
 
+.books-grid {
+  grid-template-columns: repeat(var(--book-columns), minmax(0, 1fr));
+}
+
+.bookshelf-shell {
+  min-height: calc(
+    100svh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+  );
+}
+
+
+/* Pane-style route switch: the old page slides out while the new one slides in. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 350ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+html[data-nav="forward"]::view-transition-old(root) {
+  animation-name: pane-out-left;
+}
+html[data-nav="forward"]::view-transition-new(root) {
+  animation-name: pane-in-right;
+}
+html[data-nav="back"]::view-transition-old(root) {
+  z-index: 2;
+  animation-name: pane-out-right;
+}
+html[data-nav="back"]::view-transition-new(root) {
+  animation-name: pane-in-left;
+}
+@keyframes pane-out-left { to { transform: translateX(-30%); opacity: 0; } }
+@keyframes pane-in-right { from { transform: translateX(100%); } }
+@keyframes pane-out-right { to { transform: translateX(100%); } }
+@keyframes pane-in-left { from { transform: translateX(-30%); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+.marquee-track {
+  animation: marquee var(--marquee-duration, 8s) linear infinite;
+}
+.marquee-fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+}
+@keyframes marquee {
+  to {
+    transform: translateX(var(--marquee-distance));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}

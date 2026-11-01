@@ -33,7 +33,7 @@ export const useBookshelfSettings = create<BookshelfSettings>()(
       filter: "All",
       sort: "Last read",
       layout: "Grid",
-      columns: "4",
+      columns: "3",
       setFilter: (filter) => set({ filter }),
       setSort: (sort) => set({ sort }),
       setLayout: (layout) => set({ layout }),

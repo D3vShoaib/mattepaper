@@ -248,6 +248,7 @@ interface Store {
   books: Record<string, Partial<ReaderSettings>>
   updateDefaults: (update: Partial<ReaderSettings>) => void
   resetDefaults: () => void
+  resetAll: () => void
   update: (bookId: string, update: Partial<ReaderSettings>) => void
   reset: (bookId: string) => void
   resetFields: (bookId: string, keys: (keyof ReaderSettings)[]) => void
@@ -274,6 +275,7 @@ export const useReaderSettings = create<Store>()(
           defaults: normalizeReaderSettings({ ...state.defaults, ...update }),
         })),
       resetDefaults: () => set({ defaults: defaultReaderSettings }),
+      resetAll: () => set({ defaults: defaultReaderSettings, books: {} }),
       update: (bookId, update) =>
         set((state) => ({
           books: {

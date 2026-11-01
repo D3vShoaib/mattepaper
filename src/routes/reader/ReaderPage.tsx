@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { navDirection } from "@/lib/nav-direction"
 import { Link, useParams } from "react-router"
 import { useShallow } from "zustand/react/shallow"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -291,9 +292,6 @@ export function ReaderPage() {
     const view = reader.current
     if (!href || !view || chapterNavigating) return
     setChapterNavigating(true)
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 160)
-    })
     try {
       const destination = await view.goTo(href)
       if (!destination) throw new Error("Unable to navigate")
@@ -303,6 +301,7 @@ export function ReaderPage() {
       setChapterNavigating(false)
     }
   }
+  const navVisible = ready && showBar
   return (
     <section
       className="fixed inset-0 flex flex-col"
@@ -315,18 +314,6 @@ export function ReaderPage() {
         Tap zones can be configured in reading settings. Use the arrow keys to
         turn pages and M to toggle controls.
       </p>
-      {loading && (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-sm text-muted-foreground"
-          role="status"
-        >
-          <span
-            aria-hidden="true"
-            className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
-          />
-          <span>Opening book…</span>
-        </div>
-      )}
       {error && (
         <div
           role="alert"
@@ -342,7 +329,7 @@ export function ReaderPage() {
       )}
       <div
         ref={container}
-        className={`min-h-0 flex-1 transition-opacity duration-150 ease-out motion-reduce:transition-none ${ready && !loading && !chapterNavigating ? "opacity-100" : "opacity-0"} ${ready && !loading && !chapterNavigating ? "" : "pointer-events-none"}`}
+        className={`min-h-0 flex-1 transition-opacity duration-150 ease-out motion-reduce:transition-none ${ready && !loading ? "opacity-100" : "opacity-0"} ${ready && !loading ? "" : "pointer-events-none"}`}
         onClick={(event) => {
           if (event.target !== event.currentTarget || !ready) return
           const rect = event.currentTarget.getBoundingClientRect()
@@ -366,66 +353,68 @@ export function ReaderPage() {
       )}
       <nav
         aria-label="Reader controls"
-        aria-hidden={!ready || !showBar}
-        inert={!ready || !showBar}
-        className={`fixed inset-x-0 bottom-0 z-10 flex items-center gap-2 border-t border-border bg-background px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-foreground transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${ready && showBar ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-full opacity-0"}`}
+        aria-hidden={!navVisible}
+        inert={!navVisible}
+        className={`fixed inset-x-0 bottom-0 z-10 flex items-center gap-2 rounded-t-xl border-t border-border bg-background px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-foreground transition-[translate,visibility,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${navVisible ? "visible translate-y-0 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.25)]" : "pointer-events-none invisible translate-y-full delay-[0s,300ms]"}`}
       >
-          <Link
-            to="/"
-            aria-label="Back to bookshelf"
-            className={`${buttonVariants({ variant: "outline", size: "icon-lg" })} shrink-0`}
-          >
-            <HugeiconsIcon icon={Bookshelf01Icon} />
-          </Link>
-          <ChapterSheet
-            open={chaptersOpen}
-            onOpenChange={setChaptersOpen}
-            chapters={chapters}
-            current={currentChapter}
-            onNavigate={async (href) => {
-              await moveChapter(href)
-            }}
+        <Link
+          to="/"
+          viewTransition
+          onClick={navDirection("back")}
+          aria-label="Back to bookshelf"
+          className={`${buttonVariants({ variant: "outline", size: "icon-lg" })} shrink-0`}
+        >
+          <HugeiconsIcon icon={Bookshelf01Icon} />
+        </Link>
+        {bookId && (
+          <ReaderSettingsDrawer
+            bookId={bookId}
+            fixedLayout={fixedLayout}
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
           />
-          <Button
-            variant="outline"
-            size="icon-lg"
-            aria-label="Previous chapter"
-            title={
-              previousChapter
-                ? `Previous chapter: ${previousChapter.label}`
-                : "No previous chapter"
-            }
-            disabled={!previousChapter || chapterNavigating}
-            onClick={() => void moveChapter(previousChapter?.href)}
-          >
-            <HugeiconsIcon icon={ArrowLeftDoubleIcon} />
-          </Button>
-          <span className="min-w-0 flex-1 truncate text-center text-xs text-muted-foreground">
-            {book?.title}
-            {progress !== undefined ? ` · ${Math.round(progress * 100)}%` : ""}
-          </span>
-          <Button
-            variant="outline"
-            size="icon-lg"
-            aria-label="Next chapter"
-            title={
-              nextChapter
-                ? `Next chapter: ${nextChapter.label}`
-                : "No next chapter"
-            }
-            disabled={!nextChapter || chapterNavigating}
-            onClick={() => void moveChapter(nextChapter?.href)}
-          >
-            <HugeiconsIcon icon={ArrowRightDoubleIcon} />
-          </Button>
-          {bookId && (
-            <ReaderSettingsDrawer
-              bookId={bookId}
-              fixedLayout={fixedLayout}
-              open={settingsOpen}
-              onOpenChange={setSettingsOpen}
-            />
-          )}
+        )}
+        <Button
+          variant="outline"
+          size="icon-lg"
+          aria-label="Previous chapter"
+          title={
+            previousChapter
+              ? `Previous chapter: ${previousChapter.label}`
+              : "No previous chapter"
+          }
+          disabled={!previousChapter || chapterNavigating}
+          onClick={() => void moveChapter(previousChapter?.href)}
+        >
+          <HugeiconsIcon icon={ArrowLeftDoubleIcon} />
+        </Button>
+        <span className="min-w-0 flex-1 truncate text-center text-xs text-muted-foreground">
+          {book?.title}
+          {progress !== undefined ? ` · ${Math.round(progress * 100)}%` : ""}
+        </span>
+        <Button
+          variant="outline"
+          size="icon-lg"
+          aria-label="Next chapter"
+          title={
+            nextChapter
+              ? `Next chapter: ${nextChapter.label}`
+              : "No next chapter"
+          }
+          disabled={!nextChapter || chapterNavigating}
+          onClick={() => void moveChapter(nextChapter?.href)}
+        >
+          <HugeiconsIcon icon={ArrowRightDoubleIcon} />
+        </Button>
+        <ChapterSheet
+          open={chaptersOpen}
+          onOpenChange={setChaptersOpen}
+          chapters={chapters}
+          current={currentChapter}
+          onNavigate={async (href) => {
+            await moveChapter(href)
+          }}
+        />
       </nav>
     </section>
   )

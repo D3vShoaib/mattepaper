@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { navDirection } from "@/lib/nav-direction"
 import {
   useBookshelfSettings,
   normalizeColumns,
@@ -227,6 +228,8 @@ export function ViewOptionsDrawer() {
         <DrawerFooter className="mx-auto w-full max-w-2xl px-6 pb-6">
           <Link
             to="/settings"
+            viewTransition
+            onClick={navDirection("forward")}
             className={`${buttonVariants({ variant: "outline", size: "lg" })} font-normal`}
           >
             <HugeiconsIcon icon={Settings01Icon} /> Settings

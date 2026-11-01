@@ -1,4 +1,4 @@
-import { Settings01Icon } from "@hugeicons/core-free-icons"
+import { RefreshCcwIcon, Settings01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useShallow } from "zustand/react/shallow"
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,8 @@ export function ReaderSettingsDrawer({
   const overrides = useReaderSettings((state) => state.books[bookId])
   const update = useReaderSettings((state) => state.update)
   const resetFields = useReaderSettings((state) => state.resetFields)
+  const resetBook = useReaderSettings((state) => state.reset)
+  const hasOverrides = !!overrides && Object.keys(overrides).length > 0
   return (
     <Drawer
       showSwipeHandle
@@ -67,10 +69,22 @@ export function ReaderSettingsDrawer({
           />
         </div>
         <Separator />
-        <DrawerFooter className="mx-auto w-full max-w-xl px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <DrawerFooter className="mx-auto w-full max-w-xl flex-row gap-2 px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <Button
+            type="button"
+            variant="outline"
+            className="basis-3/10"
+            title="Reset to global settings"
+            aria-label="Reset to global settings"
+            disabled={!hasOverrides}
+            onClick={() => resetBook(bookId)}
+          >
+            <HugeiconsIcon icon={RefreshCcwIcon} />
+            Reset
+          </Button>
           <DrawerClose
             render={
-              <Button type="button" variant="outline" className="w-full" />
+              <Button type="button" variant="outline" className="basis-7/10" />
             }
           >
             Close

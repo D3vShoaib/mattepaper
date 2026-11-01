@@ -1,14 +1,29 @@
-import { LogsIcon } from "@hugeicons/core-free-icons"
+import { useMemo, useState } from "react"
+import { LogsIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
+  SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
 import type { TocEntry } from "@/features/epub/foliate-adapter"
+
+function filterChapters(items: TocEntry[], query: string): TocEntry[] {
+  return items.flatMap((item) => {
+    const subitems = item.subitems
+      ? filterChapters(item.subitems, query)
+      : undefined
+    const match = (item.label ?? "").toLocaleLowerCase().includes(query)
+    return match || subitems?.length ? [{ ...item, subitems }] : []
+  })
+}
 
 function ChapterItems({
   items,
@@ -69,8 +84,20 @@ export function ChapterSheet({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const [search, setSearch] = useState("")
+  const query = search.trim().toLocaleLowerCase()
+  const visible = useMemo(
+    () => (query ? filterChapters(chapters, query) : chapters),
+    [chapters, query]
+  )
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setSearch("")
+        onOpenChange(next)
+      }}
+    >
       <SheetTrigger
         render={
           <Button
@@ -82,14 +109,39 @@ export function ChapterSheet({
       >
         <HugeiconsIcon icon={LogsIcon} />
       </SheetTrigger>
-      <SheetContent side="left" className="w-[min(85vw,24rem)]">
+      <SheetContent
+        side="left"
+        showCloseButton={false}
+        className="w-[min(85vw,24rem)]"
+      >
         <SheetHeader>
           <SheetTitle className="text-base">Contents</SheetTitle>
+          <SheetDescription>
+            {chapters.length
+              ? "Jump to any chapter in this book."
+              : "This book has no table of contents."}
+          </SheetDescription>
         </SheetHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6">
-          {chapters.length ? (
+        {chapters.length > 0 && (
+          <div className="relative px-4">
+            <HugeiconsIcon
+              icon={Search01Icon}
+              className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type="search"
+              aria-label="Search chapters"
+              placeholder="Search chapters..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="h-9 pl-9"
+            />
+          </div>
+        )}
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-2">
+          {visible.length ? (
             <ChapterItems
-              items={chapters}
+              items={visible}
               current={current}
               onSelect={(href) => {
                 void onNavigate(href)
@@ -97,12 +149,15 @@ export function ChapterSheet({
                   .catch(() => {})
               }}
             />
-          ) : (
+          ) : chapters.length ? (
             <p className="px-3 py-4 text-sm text-muted-foreground">
-              This book has no table of contents.
+              No chapters match “{search.trim()}”.
             </p>
-          )}
+          ) : null}
         </div>
+        <SheetFooter>
+          <SheetClose render={<Button variant="outline">Close</Button>} />
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   )

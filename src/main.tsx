@@ -12,3 +12,16 @@ createRoot(document.getElementById("root")!).render(
     </ThemeProvider>
   </StrictMode>
 )
+
+const splash = document.getElementById("app-splash")
+
+if (splash) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      splash.dataset.hidden = "true"
+      const removeSplash = () => splash.remove()
+      splash.addEventListener("transitionend", removeSplash, { once: true })
+      window.setTimeout(removeSplash, 500)
+    })
+  })
+}
