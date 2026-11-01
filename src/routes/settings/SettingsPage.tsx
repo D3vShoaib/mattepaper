@@ -11,6 +11,7 @@ import { navDirection } from "@/lib/nav-direction"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { useTheme } from "@/components/theme-provider"
+import { StorageSection } from "@/features/library/StorageSection"
 import { PwaInstallSection } from "@/features/pwa/PwaInstallSection"
 import { ReaderSettingsFields } from "@/features/reading/ReaderSettingsFields"
 import {
@@ -80,6 +81,7 @@ export function SettingsPage() {
         </ButtonGroup>
       </Group>
       <PwaInstallSection />
+      <StorageSection />
       <Group title="Reading defaults">
         <ReaderSettingsFields
           settings={defaults}

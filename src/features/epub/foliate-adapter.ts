@@ -16,7 +16,13 @@ export interface TocEntry {
   subitems?: TocEntry[]
 }
 interface FoliateBook {
-  metadata?: { title?: MetadataValue; author?: MetadataValue }
+  metadata?: {
+    title?: MetadataValue
+    author?: MetadataValue
+    language?: MetadataValue
+    publisher?: MetadataValue
+    description?: MetadataValue
+  }
   sections: unknown[]
   toc?: TocEntry[]
   getCover?: () => Promise<Blob | null>
@@ -87,6 +93,9 @@ export async function parseEpub(file: File) {
       title:
         textValue(book.metadata?.title) || file.name.replace(/\.epub$/i, ""),
       author: textValue(book.metadata?.author) || "Unknown author",
+      language: textValue(book.metadata?.language) || undefined,
+      publisher: textValue(book.metadata?.publisher) || undefined,
+      description: textValue(book.metadata?.description) || undefined,
       cover,
     }
   } finally {

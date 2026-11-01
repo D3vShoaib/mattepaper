@@ -6,6 +6,7 @@ import { Link } from "react-router"
 import { liveQuery } from "dexie"
 import { db, type Book } from "@/db"
 import { importBook } from "@/features/library/import-book"
+import { BookMenu } from "@/routes/bookshelf/components/BookMenu"
 import { PwaInstallButton } from "@/features/pwa/PwaInstallButton"
 import { ViewOptionsDrawer } from "@/routes/bookshelf/components/ViewOptionsDrawer"
 import {
@@ -84,7 +85,7 @@ function Cover({ book }: { book: Book }) {
         </div>
       )}
       {book.progress > 0 && (
-        <span className="absolute bottom-2 left-1 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
+        <span className="absolute bottom-2 left-1 flex h-5 items-center rounded bg-background/80 px-1.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
           {Math.round(book.progress * 100)}%
         </span>
       )}
@@ -178,25 +179,30 @@ export function BookshelfPage() {
     setPendingImports(files.length)
     setError("")
     setNotice("")
-    let imported = 0,
-      duplicates = 0
+    let imported = 0
+    const duplicates: string[] = []
     const failures: string[] = []
     for (const file of Array.from(files)) {
       try {
-        if ((await importBook(file)) === "duplicate") duplicates++
+        if ((await importBook(file)) === "duplicate")
+          duplicates.push(file.name.replace(/\.epub$/i, ""))
         else imported++
       } catch {
         failures.push(file.name)
       }
       setPendingImports((n) => Math.max(0, n - 1))
     }
-    if (imported || duplicates)
+    if (imported || duplicates.length)
       setNotice(
         [
           imported
             ? `${imported} book${imported === 1 ? "" : "s"} imported`
             : "",
-          duplicates ? `${duplicates} already in your library` : "",
+          duplicates.length === 1
+            ? `“${duplicates[0]}” is already in your library`
+            : duplicates.length
+              ? `${duplicates.length} books are already in your library`
+              : "",
         ]
           .filter(Boolean)
           .join(" · ")
@@ -294,21 +300,37 @@ export function BookshelfPage() {
             <BookSkeleton key={`importing-${i}`} layout={layout} />
           ))}
           {visibleBooks.map((book) => (
-            <Link
+            <div
               key={book.id}
-              to={`/read/${book.id}`}
-              viewTransition
-              onClick={navDirection("forward")}
               className={
                 layout === "Grid"
-                  ? "min-w-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  : "flex items-center gap-4 rounded-md p-2 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
+                  ? "relative min-w-0"
+                  : "relative flex items-center gap-4 rounded-md p-2 hover:bg-secondary"
               }
             >
-              <div className={layout === "List" ? "w-16 shrink-0" : ""}>
+              <Link
+                to={`/read/${book.id}`}
+                viewTransition
+                onClick={navDirection("forward")}
+                aria-label={`Read ${book.title}`}
+                className="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <div
+                className={
+                  layout === "List" ? "relative w-16 shrink-0" : "relative"
+                }
+              >
                 <Cover book={book} />
+                <BookMenu
+                  book={book}
+                  className="absolute right-1 bottom-2 z-10 size-5 rounded border-0 bg-background/80 text-foreground backdrop-blur-sm hover:bg-background/80 [&_svg]:size-3.5"
+                />
               </div>
-              <div className={layout === "Grid" ? "mt-2 min-w-0" : "min-w-0"}>
+              <div
+                className={
+                  layout === "Grid" ? "mt-2 min-w-0" : "min-w-0 flex-1"
+                }
+              >
                 <h2 className="text-sm font-medium">
                   <Marquee>{book.title}</Marquee>
                 </h2>
@@ -316,7 +338,7 @@ export function BookshelfPage() {
                   {book.author}
                 </p>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

@@ -5,6 +5,9 @@ export interface Book {
   fingerprint: string
   title: string
   author: string
+  language?: string
+  publisher?: string
+  description?: string
   importedAt: number
   lastReadAt?: number
   cfi?: string
