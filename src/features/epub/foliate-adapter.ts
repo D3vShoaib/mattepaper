@@ -1,18 +1,27 @@
+import { listenForReaderTaps, type TapAction } from "./reader-taps"
+import { readerThemes, type ReaderSettings } from "@/stores/reader-settings"
 // Foliate is kept behind this adapter; its upstream JavaScript has no TypeScript declarations.
 // @ts-expect-error Foliate is a JavaScript submodule without type declarations.
 import { makeBook } from "../../../packages/foliate-js/view.js"
 
 type MetadataValue =
   string | Record<string, unknown> | MetadataValue[] | undefined
+export interface TocEntry {
+  label: string
+  href?: string
+  subitems?: TocEntry[]
+}
 interface FoliateBook {
   metadata?: { title?: MetadataValue; author?: MetadataValue }
   sections: unknown[]
+  toc?: TocEntry[]
   getCover?: () => Promise<Blob | null>
   destroy?: () => void
 }
 interface Relocation {
   cfi?: string
   fraction?: number
+  tocItem?: { href?: string; label?: string }
 }
 export interface ReaderView extends HTMLElement {
   open(book: FoliateBook): Promise<void>
@@ -23,6 +32,11 @@ export interface ReaderView extends HTMLElement {
   prev(): Promise<void>
   next(): Promise<void>
   close(): void
+  book: FoliateBook
+  lastLocation?: { cfi?: string }
+  goTo(href: string): Promise<unknown>
+  isFixedLayout?: boolean
+  renderer: HTMLElement & { setStyles?: (styles: string) => void }
 }
 function textValue(value: MetadataValue): string {
   if (typeof value === "string") return value
@@ -65,17 +79,62 @@ export async function parseEpub(file: File) {
     book.destroy?.()
   }
 }
+export function applyReaderSettings(
+  view: Pick<ReaderView, "renderer" | "isFixedLayout">,
+  settings: ReaderSettings
+) {
+  if (view.isFixedLayout) return
+  const colors = readerThemes[settings.theme]
+  const attributes: Record<string, string> = {
+    "max-column-count": "1",
+    "max-inline-size": "720px",
+    "margin-top": `${settings.margin}px`,
+    "margin-bottom": `${Math.max(settings.margin, 56)}px`,
+    "margin-left": `${settings.margin}px`,
+    "margin-right": `${settings.margin}px`,
+  }
+  for (const [name, value] of Object.entries(attributes)) {
+    if (view.renderer.getAttribute(name) !== value)
+      view.renderer.setAttribute(name, value)
+  }
+  const family =
+    settings.font === "sans" ? "Arial, sans-serif" : "Georgia, serif"
+  view.renderer.setStyles?.(`
+    html, body { background: ${colors.background} !important; color: ${colors.foreground} !important; }
+    body { font-family: ${family} !important; font-size: ${settings.fontSize}px !important; line-height: ${settings.lineHeight} !important; }
+    body :not(a) { color: inherit !important; }
+    p, li, blockquote { line-height: ${settings.lineHeight} !important; }
+    a { color: ${colors.link} !important; }
+  `)
+}
 export async function createReader(
   file: File,
   container: HTMLElement,
   lastLocation: string | undefined,
-  onRelocate: (detail: Relocation) => void
+  onRelocate: (detail: Relocation) => void,
+  onTap: (action: Exclude<TapAction, null>) => void,
+  settings: ReaderSettings
 ) {
   const book = (await makeBook(file)) as FoliateBook
   const view = document.createElement("foliate-view") as ReaderView
   view.style.cssText = "display:block;width:100%;height:100%"
   const handle = (event: Event) =>
     onRelocate((event as CustomEvent<Relocation>).detail)
+  const documentListeners = new Map<Document, () => void>()
+  const onLoad = (event: Event) => {
+    const doc = (event as CustomEvent<{ doc: Document }>).detail.doc
+    if (documentListeners.has(doc)) return
+    const stop = listenForReaderTaps(doc, onTap, container)
+    const window = doc.defaultView
+    const release = () => {
+      stop()
+      window?.removeEventListener("unload", release)
+      documentListeners.delete(doc)
+    }
+    documentListeners.set(doc, release)
+    window?.addEventListener("unload", release, { once: true })
+  }
+  view.addEventListener("load", onLoad)
   view.addEventListener("relocate", handle)
   view.addEventListener("external-link", (event) => {
     event.preventDefault()
@@ -91,6 +150,7 @@ export async function createReader(
   container.append(view)
   try {
     await view.open(book)
+    applyReaderSettings(view, settings)
     try {
       await view.init({ lastLocation })
     } catch {
@@ -106,6 +166,9 @@ export async function createReader(
     view,
     destroy: () => {
       view.removeEventListener("relocate", handle)
+      view.removeEventListener("load", onLoad)
+      for (const stop of documentListeners.values()) stop()
+      documentListeners.clear()
       view.close()
       view.remove()
       book.destroy?.()
