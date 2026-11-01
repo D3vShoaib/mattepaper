@@ -22,7 +22,7 @@ export default defineConfig({
         scope: "/",
         display: "standalone",
         display_override: ["standalone", "minimal-ui"],
-        orientation: "any",
+        orientation: "portrait",
         theme_color: "#16161a",
         background_color: "#16161a",
         categories: ["books", "education", "entertainment"],
