@@ -100,7 +100,7 @@ function Cover({ book }: { book: Book }) {
   )
 }
 
-function BookSkeleton({ layout }: { layout: "Grid" | "List" }) {
+function BookSkeleton({ layout }: { layout: string }) {
   return (
     <div
       aria-hidden="true"
