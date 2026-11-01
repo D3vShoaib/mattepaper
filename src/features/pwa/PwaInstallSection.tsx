@@ -6,16 +6,14 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@/components/ui/button"
+import { SettingsGroup } from "@/components/settings-group"
 import { usePwaInstall } from "./pwa-install"
 
 export function PwaInstallSection() {
   const { canInstall, installed, isIos, install } = usePwaInstall()
 
   return (
-    <section className="space-y-3">
-      <h2 className="font-heading text-sm font-medium text-muted-foreground">
-        Install
-      </h2>
+    <SettingsGroup title="Install">
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="flex items-center gap-3">
           <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted">
@@ -63,6 +61,6 @@ export function PwaInstallSection() {
           </p>
         )}
       </div>
-    </section>
+    </SettingsGroup>
   )
 }

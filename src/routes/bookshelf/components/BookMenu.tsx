@@ -31,6 +31,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { db, type Book } from "@/db"
 import { useReaderSettings } from "@/stores/reader-settings"
+import { bookStatus, isFinished } from "@/features/library/book-status"
 import { formatBytes } from "@/lib/format"
 
 type Dialog = "details" | "edit" | "remove" | null
@@ -59,12 +60,11 @@ function DetailsSheet({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const state = bookStatus(book)
   const status =
-    book.progress >= 0.99
-      ? "Finished"
-      : book.progress > 0
-        ? `Reading · ${Math.round(book.progress * 100)}%`
-        : "Unread"
+    state === "Reading"
+      ? `Reading · ${Math.round(book.progress * 100)}%`
+      : state
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -268,7 +268,7 @@ export function BookMenu({
 }) {
   const [dialog, setDialog] = useState<Dialog>(null)
   const coverInput = useRef<HTMLInputElement>(null)
-  const finished = book.progress >= 0.99
+  const finished = isFinished(book)
   const close = (next: boolean) => {
     if (!next) setDialog(null)
   }

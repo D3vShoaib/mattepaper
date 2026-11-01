@@ -1,52 +1,17 @@
-import {
-  ArrowLeft01Icon,
-  ComputerIcon,
-  Moon02Icon,
-  RefreshCcwIcon,
-  Sun03Icon,
-} from "@hugeicons/core-free-icons"
+import { ArrowLeft01Icon, RefreshCcwIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link } from "react-router"
-import { navDirection } from "@/lib/nav-direction"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
 import { useTheme } from "@/components/theme-provider"
 import { StorageSection } from "@/features/library/StorageSection"
 import { PwaInstallSection } from "@/features/pwa/PwaInstallSection"
-import { ReaderSettingsFields } from "@/features/reading/ReaderSettingsFields"
-import {
-  defaultReaderSettings,
-  useReaderSettings,
-  type ReaderSettings,
-} from "@/stores/reader-settings"
-
-const themeOptions = [
-  { value: "system", label: "System", icon: ComputerIcon },
-  { value: "light", label: "Light", icon: Sun03Icon },
-  { value: "dark", label: "Dark", icon: Moon02Icon },
-] as const
-
-function Group({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="space-y-3">
-      <h2 className="font-heading text-sm font-medium text-muted-foreground">
-        {title}
-      </h2>
-      {children}
-    </section>
-  )
-}
+import { navDirection } from "@/lib/nav-direction"
+import { AppearanceSection } from "@/routes/settings/components/AppearanceSection"
+import { ReadingDefaultsSection } from "@/routes/settings/components/ReadingDefaultsSection"
+import { useReaderSettings } from "@/stores/reader-settings"
 
 export function SettingsPage() {
-  const { theme, setTheme } = useTheme()
-  const defaults = useReaderSettings((state) => state.defaults)
-  const update = useReaderSettings((state) => state.updateDefaults)
+  const { setTheme } = useTheme()
   const resetAll = useReaderSettings((state) => state.resetAll)
   return (
     <section className="mx-auto max-w-2xl space-y-5 pb-6">
@@ -64,37 +29,10 @@ export function SettingsPage() {
           Settings
         </h1>
       </header>
-      <Group title="Appearance">
-        <ButtonGroup>
-          {themeOptions.map(({ value, label, icon }) => (
-            <Button
-              key={value}
-              type="button"
-              variant={theme === value ? "default" : "outline"}
-              aria-pressed={theme === value}
-              onClick={() => setTheme(value)}
-            >
-              <HugeiconsIcon icon={icon} />
-              {label}
-            </Button>
-          ))}
-        </ButtonGroup>
-      </Group>
+      <AppearanceSection />
       <PwaInstallSection />
       <StorageSection />
-      <Group title="Reading defaults">
-        <ReaderSettingsFields
-          settings={defaults}
-          onChange={update}
-          onReset={(keys) => {
-            const changes: Partial<ReaderSettings> = {}
-            for (const key of keys)
-              Object.assign(changes, { [key]: defaultReaderSettings[key] })
-            update(changes)
-          }}
-          isResettable={(key) => defaults[key] !== defaultReaderSettings[key]}
-        />
-      </Group>
+      <ReadingDefaultsSection />
       <Button
         type="button"
         variant="outline"

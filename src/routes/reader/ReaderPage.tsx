@@ -1,16 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { navDirection } from "@/lib/nav-direction"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router"
 import { useShallow } from "zustand/react/shallow"
-import { Button, buttonVariants } from "@/components/ui/button"
-import {
-  ArrowLeftDoubleIcon,
-  ArrowRightDoubleIcon,
-  Bookshelf01Icon,
-} from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ChapterSheet } from "./components/ChapterSheet"
-import { ReaderSettingsDrawer } from "./components/ReaderSettingsDrawer"
+import { Button } from "@/components/ui/button"
+import { ReaderControls } from "./components/ReaderControls"
 import { useReaderFontUrl } from "@/features/fonts/use-reader-font"
 import { useReaderPalette } from "@/features/reading/reader-palette"
 import {
@@ -28,7 +20,11 @@ import {
   type TocEntry,
 } from "@/features/epub/foliate-adapter"
 import { getTapZone, type ReaderInteraction } from "@/features/epub/reader-taps"
-import { navigableChapters } from "@/features/epub/chapters"
+import { useChapterNavigation } from "@/features/epub/use-chapter-navigation"
+import { useReaderShortcuts } from "@/features/epub/use-reader-shortcuts"
+
+const currentSettings = (bookId = "") =>
+  effectiveReaderSettings(useReaderSettings.getState(), bookId)
 
 export function ReaderPage() {
   const { bookId } = useParams()
@@ -49,7 +45,6 @@ export function ReaderPage() {
   const [error, setError] = useState("")
   const [showBar, setShowBar] = useState(true)
   const [chaptersOpen, setChaptersOpen] = useState(false)
-  const [chapterNavigating, setChapterNavigating] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [readerWidth, setReaderWidth] = useState(() => window.innerWidth)
   const [progress, setProgress] = useState<number>()
@@ -59,18 +54,17 @@ export function ReaderPage() {
   const settings = useReaderSettings(
     useShallow((state) => effectiveReaderSettings(state, bookId ?? ""))
   )
-  const chapterEntries = useMemo(() => navigableChapters(chapters), [chapters])
-  const chapterIndex = currentChapter
-    ? chapterEntries.findIndex((entry) => entry.href === currentChapter)
-    : -1
-  const previousChapter =
-    chapterIndex > 0 ? chapterEntries[chapterIndex - 1] : undefined
-  const nextChapter =
-    chapterIndex >= 0
-      ? chapterEntries[chapterIndex + 1]
-      : !currentChapter
-        ? chapterEntries[0]
-        : undefined
+  const {
+    previous: previousChapter,
+    next: nextChapter,
+    navigating: chapterNavigating,
+    moveTo: moveChapter,
+  } = useChapterNavigation({
+    reader,
+    chapters,
+    currentChapter,
+    onError: setError,
+  })
   const colors = useReaderPalette()
   const fontUrl = useReaderFontUrl(settings)
   const appearance = useReaderSettings(
@@ -91,9 +85,7 @@ export function ReaderPage() {
     (interaction: ReaderInteraction) => {
       const action =
         interaction.type === "zone"
-          ? effectiveReaderSettings(useReaderSettings.getState(), bookId ?? "")[
-          `${interaction.zone}Action` as TapZoneKey
-          ]
+          ? currentSettings(bookId)[`${interaction.zone}Action` as TapZoneKey]
           : interaction.action
       if (action === "toggle") {
         setShowBar((visible) => !visible)
@@ -170,7 +162,7 @@ export function ReaderPage() {
             })
           },
           onInteraction,
-          effectiveReaderSettings(useReaderSettings.getState(), bookId)
+          currentSettings(bookId)
         )
         if (cancelled) {
           instance.destroy()
@@ -258,49 +250,8 @@ export function ReaderPage() {
     }, 120)
     return () => window.clearTimeout(timer)
   }, [ready, appearance, bookId, fontUrl, colors, readerWidth])
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (
-        event.defaultPrevented ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey ||
-        (event.target instanceof Element &&
-          event.target.closest(
-            "input, textarea, select, [contenteditable=true]"
-          ))
-      )
-        return
-      const action =
-        event.key === "ArrowLeft"
-          ? "previous"
-          : event.key === "ArrowRight"
-            ? "next"
-            : event.key.toLowerCase() === "m"
-              ? "toggle"
-              : null
-      if (action) {
-        event.preventDefault()
-        onInteraction({ type: "shortcut", action })
-      }
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [onInteraction])
+  useReaderShortcuts(onInteraction)
 
-  async function moveChapter(href?: string) {
-    const view = reader.current
-    if (!href || !view || chapterNavigating) return
-    setChapterNavigating(true)
-    try {
-      const destination = await view.goTo(href)
-      if (!destination) throw new Error("Unable to navigate")
-    } catch {
-      setError("Could not open that chapter.")
-    } finally {
-      setChapterNavigating(false)
-    }
-  }
   const navVisible = ready && showBar
   return (
     <section
@@ -351,71 +302,23 @@ export function ReaderPage() {
           Show controls
         </Button>
       )}
-      <nav
-        aria-label="Reader controls"
-        aria-hidden={!navVisible}
-        inert={!navVisible}
-        className={`fixed inset-x-0 bottom-0 z-10 flex items-center gap-2 rounded-t-xl border-t border-border bg-background px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-foreground transition-[translate,visibility,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${navVisible ? "visible translate-y-0 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.25)]" : "pointer-events-none invisible translate-y-full delay-[0s,300ms]"}`}
-      >
-        <Link
-          to="/"
-          viewTransition
-          onClick={navDirection("back")}
-          aria-label="Back to bookshelf"
-          className={`${buttonVariants({ variant: "outline", size: "icon-lg" })} shrink-0`}
-        >
-          <HugeiconsIcon icon={Bookshelf01Icon} />
-        </Link>
-        {bookId && (
-          <ReaderSettingsDrawer
-            bookId={bookId}
-            fixedLayout={fixedLayout}
-            open={settingsOpen}
-            onOpenChange={setSettingsOpen}
-          />
-        )}
-        <Button
-          variant="outline"
-          size="icon-lg"
-          aria-label="Previous chapter"
-          title={
-            previousChapter
-              ? `Previous chapter: ${previousChapter.label}`
-              : "No previous chapter"
-          }
-          disabled={!previousChapter || chapterNavigating}
-          onClick={() => void moveChapter(previousChapter?.href)}
-        >
-          <HugeiconsIcon icon={ArrowLeftDoubleIcon} />
-        </Button>
-        <span className="min-w-0 flex-1 truncate text-center text-xs text-muted-foreground">
-          {book?.title}
-          {progress !== undefined ? ` · ${Math.round(progress * 100)}%` : ""}
-        </span>
-        <Button
-          variant="outline"
-          size="icon-lg"
-          aria-label="Next chapter"
-          title={
-            nextChapter
-              ? `Next chapter: ${nextChapter.label}`
-              : "No next chapter"
-          }
-          disabled={!nextChapter || chapterNavigating}
-          onClick={() => void moveChapter(nextChapter?.href)}
-        >
-          <HugeiconsIcon icon={ArrowRightDoubleIcon} />
-        </Button>
-        <ChapterSheet
-          open={chaptersOpen}
-          onOpenChange={setChaptersOpen}
-          chapters={chapters}
-          current={currentChapter}
-          onNavigate={async (href) => {
-            await moveChapter(href)
-          }}
-        />
-      </nav>
+      <ReaderControls
+        visible={navVisible}
+        bookId={bookId}
+        title={book?.title}
+        progress={progress}
+        fixedLayout={fixedLayout}
+        chapters={chapters}
+        currentChapter={currentChapter}
+        previousChapter={previousChapter}
+        nextChapter={nextChapter}
+        chapterNavigating={chapterNavigating}
+        onMoveChapter={moveChapter}
+        settingsOpen={settingsOpen}
+        onSettingsOpenChange={setSettingsOpen}
+        chaptersOpen={chaptersOpen}
+        onChaptersOpenChange={setChaptersOpen}
+      />
     </section>
   )
 }

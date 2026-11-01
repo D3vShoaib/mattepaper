@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { liveQuery } from "dexie"
 import { DatabaseIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { SettingsGroup } from "@/components/settings-group"
 import { db } from "@/db"
 import { formatBytes } from "@/lib/format"
 
@@ -40,10 +41,7 @@ export function StorageSection() {
   }, [])
 
   return (
-    <section className="space-y-3">
-      <h2 className="font-heading text-sm font-medium text-muted-foreground">
-        Storage
-      </h2>
+    <SettingsGroup title="Storage">
       <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
           <HugeiconsIcon icon={DatabaseIcon} className="size-5" />
@@ -59,6 +57,6 @@ export function StorageSection() {
           </p>
         </div>
       </div>
-    </section>
+    </SettingsGroup>
   )
 }

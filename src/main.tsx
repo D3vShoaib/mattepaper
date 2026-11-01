@@ -25,9 +25,3 @@ if (splash) {
     })
   })
 }
-
-// Keep the installed app in portrait; browsers that refuse the lock ignore this.
-const orientation = screen.orientation as
-  | (ScreenOrientation & { lock?: (orientation: "portrait") => Promise<void> })
-  | undefined
-orientation?.lock?.("portrait")?.catch(() => undefined)
