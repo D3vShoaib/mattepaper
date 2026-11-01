@@ -313,7 +313,7 @@ export function BookshelfPage() {
                 viewTransition
                 onClick={navDirection("forward")}
                 aria-label={`Read ${book.title}`}
-                className="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="absolute inset-0 z-[1] rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               <div
                 className={

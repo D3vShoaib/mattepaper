@@ -275,7 +275,7 @@ export function BookMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger
           render={
             <Button
