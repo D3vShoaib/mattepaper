@@ -132,3 +132,5 @@
     @apply font-sans;
     }
 }
+.books-grid { grid-template-columns: repeat(var(--book-columns), minmax(0, 1fr)); }
+

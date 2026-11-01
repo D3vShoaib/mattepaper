@@ -1,0 +1,3 @@
+[submodule "mattepaper-foliate"]
+	path = packages/foliate-js
+	url = https://github.com/readest/foliate-js.git
