@@ -12,7 +12,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "test": "node --experimental-strip-types --test tests/book-status.test.mjs tests/reader-settings.test.mjs tests/reader-taps.test.mjs tests/storage-treemap.test.mjs tests/chapter-progress.test.mjs",
+    "test": "node --experimental-strip-types --test tests/book-status.test.mjs tests/reader-settings.test.mjs tests/reader-taps.test.mjs tests/storage-treemap.test.mjs tests/chapter-progress.test.mjs tests/pwa-display.test.mjs",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },

@@ -13,6 +13,8 @@ import { navigableChapters } from "@/features/epub/chapters"
 import { navDirection } from "@/lib/nav-direction"
 import { ChapterSheet } from "./ChapterSheet"
 import { ReaderSettingsDrawer } from "./ReaderSettingsDrawer"
+import { useAppSettings } from "@/stores/app-settings"
+import { ReaderFullscreenButton } from "@/features/reading/ReaderFullscreenButton"
 
 function ChapterStepButton({
   direction,
@@ -79,6 +81,9 @@ export function ReaderControls({
   chaptersOpen: boolean
   onChaptersOpenChange: (open: boolean) => void
 }) {
+  const showFullscreenButton = useAppSettings(
+    (state) => state.showFullscreenButton
+  )
   const chapterName = navigableChapters(chapters).find(
     (chapter) => chapter.href === currentChapter
   )?.label
@@ -119,6 +124,7 @@ export function ReaderControls({
           <LibraryBigIcon className="size-5" />
         </Link>
         <div className="pointer-events-auto flex h-12 items-center gap-1 rounded-full border-2 border-foreground/25 bg-background px-1">
+          {showFullscreenButton && <ReaderFullscreenButton />}
           <Button
             type="button"
             variant="ghost"

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react"
+import { isInstalledDisplay } from "./pwa-display"
 
 export interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -23,10 +24,12 @@ declare global {
 }
 
 const standaloneQuery = "(display-mode: standalone)"
+const fullscreenQuery = "(display-mode: fullscreen)"
 const listeners = new Set<() => void>()
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null
 let installed = false
+let installationConfirmed = false
 let snapshot: PwaInstallState = {
   canInstall: false,
   installed: false,
@@ -36,10 +39,12 @@ let snapshot: PwaInstallState = {
 function isStandalone() {
   if (typeof window === "undefined") return false
 
-  return (
-    window.matchMedia(standaloneQuery).matches ||
-    (navigator as NavigatorWithStandalone).standalone === true
-  )
+  return isInstalledDisplay({
+    standalone: window.matchMedia(standaloneQuery).matches,
+    fullscreen: window.matchMedia(fullscreenQuery).matches,
+    javascriptFullscreen: Boolean(document.fullscreenElement),
+    iosStandalone: (navigator as NavigatorWithStandalone).standalone === true,
+  })
 }
 
 function isIosDevice() {
@@ -96,16 +101,20 @@ if (typeof window !== "undefined") {
   })
 
   window.addEventListener("appinstalled", () => {
+    installationConfirmed = true
     installed = true
     deferredPrompt = null
     window.__pwaInstallPrompt = null
     updateSnapshot()
   })
 
-  window.matchMedia(standaloneQuery).addEventListener("change", (event) => {
-    installed = event.matches
+  const onDisplayChange = () => {
+    installed = installationConfirmed || isStandalone()
     updateSnapshot()
-  })
+  }
+  window.matchMedia(standaloneQuery).addEventListener("change", onDisplayChange)
+  window.matchMedia(fullscreenQuery).addEventListener("change", onDisplayChange)
+  document.addEventListener("fullscreenchange", onDisplayChange)
 }
 
 export async function promptPwaInstall() {
@@ -121,6 +130,7 @@ export async function promptPwaInstall() {
   const choice = await prompt.userChoice
 
   if (choice.outcome === "accepted") {
+    installationConfirmed = true
     installed = true
     updateSnapshot()
   }

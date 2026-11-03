@@ -11,13 +11,16 @@ import { PwaInstallSection } from "@/features/pwa/PwaInstallSection"
 import { navDirection } from "@/lib/nav-direction"
 import { AppearanceSection } from "@/routes/settings/components/AppearanceSection"
 import { ReadingDefaultsSection } from "@/routes/settings/components/ReadingDefaultsSection"
+import { FullscreenSection } from "@/routes/settings/components/FullscreenSection"
 import { useReaderSettings } from "@/stores/reader-settings"
 import { useBookshelfSettings } from "@/stores/bookshelf-settings"
+import { useAppSettings } from "@/stores/app-settings"
 
 export function SettingsPage() {
   const { setTheme } = useTheme()
   const resetAll = useReaderSettings((state) => state.resetAll)
   const resetBookshelf = useBookshelfSettings((state) => state.resetAll)
+  const resetApp = useAppSettings((state) => state.resetAll)
   return (
     <section className="mx-auto max-w-2xl space-y-10">
       <header className="pointer-events-none sticky top-[env(safe-area-inset-top)] z-20 -mx-4 flex items-center px-3 py-2">
@@ -37,6 +40,7 @@ export function SettingsPage() {
       </header>
       <PwaInstallSection />
       <AppearanceSection />
+      <FullscreenSection />
       <StorageSection />
       <Separator />
       <ReadingDefaultsSection />
@@ -47,6 +51,7 @@ export function SettingsPage() {
         onClick={() => {
           resetAll()
           resetBookshelf()
+          resetApp()
           setTheme("dark")
         }}
       >
