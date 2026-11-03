@@ -1,8 +1,23 @@
-import type { TapZone } from "@/stores/reader-settings"
+import type { TapZone } from "@/features/reading/reader-settings"
 
 export type ReaderInteraction =
   | { type: "zone"; zone: TapZone }
   | { type: "shortcut"; action: "previous" | "next" | "toggle" }
+
+export function getShortcutAction(
+  key: string
+): "previous" | "next" | "toggle" | null {
+  switch (key.toLowerCase()) {
+    case "arrowleft":
+      return "previous"
+    case "arrowright":
+      return "next"
+    case "m":
+      return "toggle"
+    default:
+      return null
+  }
+}
 
 export function getTapZone(
   x: number,
@@ -95,14 +110,7 @@ export function listenForReaderTaps(
       target.closest("input, textarea, select, [contenteditable=true]")
     )
       return
-    const action =
-      event.key === "ArrowLeft"
-        ? "previous"
-        : event.key === "ArrowRight"
-          ? "next"
-          : event.key.toLowerCase() === "m"
-            ? "toggle"
-            : null
+    const action = getShortcutAction(event.key)
     if (action) {
       event.preventDefault()
       onAction({ type: "shortcut", action })

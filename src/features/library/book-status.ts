@@ -1,14 +1,18 @@
-import type { Book } from "@/db"
+import type { Book, BookStatus } from "@/db"
 
-export type BookStatus = "Unread" | "Reading" | "Finished"
+export type { BookStatus } from "@/db"
 
-const FINISHED_PROGRESS = 0.99
-
-export function isFinished(book: Pick<Book, "progress">) {
-  return book.progress >= FINISHED_PROGRESS
+export function isFinished(book: Pick<Book, "status">) {
+  return book.status === "Finished"
 }
 
-export function bookStatus(book: Pick<Book, "progress">): BookStatus {
-  if (isFinished(book)) return "Finished"
-  return book.progress > 0 ? "Reading" : "Unread"
+export function bookStatus(book: Pick<Book, "status">): BookStatus {
+  return book.status
+}
+
+export function statusAfterProgress(
+  status: BookStatus,
+  progress: number
+): BookStatus {
+  return status === "Finished" || progress >= 1 ? "Finished" : "Reading"
 }

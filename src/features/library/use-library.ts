@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react"
 import { liveQuery } from "dexie"
 import { db, type Book } from "@/db"
+import type {
+  BookshelfFilter,
+  BookshelfSort,
+} from "@/stores/bookshelf-settings"
 import { bookStatus } from "@/features/library/book-status"
 
-export function sortBooks(books: Book[], sort: string) {
+export function sortBooks(books: Book[], sort: BookshelfSort) {
   return [...books].sort((a, b) =>
     sort === "Title"
       ? a.title.localeCompare(b.title)
@@ -22,8 +26,8 @@ export function useLibrary({
   sort,
 }: {
   search: string
-  filter: string
-  sort: string
+  filter: BookshelfFilter
+  sort: BookshelfSort
 }) {
   const [books, setBooks] = useState<Book[]>()
   const [error, setError] = useState("")

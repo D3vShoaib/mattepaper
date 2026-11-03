@@ -13,10 +13,7 @@ export function BookCard({ book, grid }: { book: Book; grid: boolean }) {
       cover={
         <>
           <BookCover book={book} />
-          <BookMenu
-            book={book}
-            className="absolute right-1 bottom-2 z-10 size-5 rounded border-0 bg-background/80 text-foreground backdrop-blur-sm hover:bg-background/80 [&_svg]:size-3.5"
-          />
+          <BookMenu book={book} className="absolute right-1 bottom-2 z-10" />
         </>
       }
     >

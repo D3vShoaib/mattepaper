@@ -1,8 +1,4 @@
-import {
-  ComputerIcon,
-  Moon02Icon,
-  Sun03Icon,
-} from "@hugeicons/core-free-icons"
+import { ComputerIcon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
@@ -18,12 +14,13 @@ const themeOptions = [
 export function AppearanceSection() {
   const { theme, setTheme } = useTheme()
   return (
-    <SettingsGroup title="Appearance">
-      <ButtonGroup>
+    <SettingsGroup title="App appearance" hideTitle>
+      <ButtonGroup className="w-full" aria-label="App appearance">
         {themeOptions.map(({ value, label, icon }) => (
           <Button
             key={value}
             type="button"
+            className="h-11 min-w-0 flex-1 text-sm"
             variant={theme === value ? "default" : "outline"}
             aria-pressed={theme === value}
             onClick={() => setTheme(value)}

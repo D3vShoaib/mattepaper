@@ -17,7 +17,7 @@ type ThemeProviderState = {
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
 const THEME_VALUES: Theme[] = ["dark", "light", "system"]
-const THEME_COLORS = { light: "#f7f5f0", dark: "#16161a" } as const
+const THEME_COLORS = { light: "#ffffff", dark: "#121212" } as const
 
 const ThemeProviderContext = React.createContext<
   ThemeProviderState | undefined
@@ -29,6 +29,23 @@ function isTheme(value: string | null): value is Theme {
   }
 
   return THEME_VALUES.includes(value as Theme)
+}
+
+function readStoredTheme(storageKey: string, fallback: Theme): Theme {
+  try {
+    const storedTheme = localStorage.getItem(storageKey)
+    return isTheme(storedTheme) ? storedTheme : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function storeTheme(storageKey: string, theme: Theme) {
+  try {
+    localStorage.setItem(storageKey, theme)
+  } catch {
+    // Keep theme changes available when browser storage is disabled.
+  }
 }
 
 function getSystemTheme(): ResolvedTheme {
@@ -79,23 +96,18 @@ function isEditableTarget(target: EventTarget | null) {
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "dark",
   storageKey = "theme",
   disableTransitionOnChange = true,
   ...props
 }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
-    const storedTheme = localStorage.getItem(storageKey)
-    if (isTheme(storedTheme)) {
-      return storedTheme
-    }
-
-    return defaultTheme
+    return readStoredTheme(storageKey, defaultTheme)
   })
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
-      localStorage.setItem(storageKey, nextTheme)
+      storeTheme(storageKey, nextTheme)
       setThemeState(nextTheme)
     },
     [storageKey]
@@ -175,7 +187,7 @@ export function ThemeProvider({
                 ? "light"
                 : "dark"
 
-        localStorage.setItem(storageKey, nextTheme)
+        storeTheme(storageKey, nextTheme)
         return nextTheme
       })
     }
@@ -189,10 +201,6 @@ export function ThemeProvider({
 
   React.useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.storageArea !== localStorage) {
-        return
-      }
-
       if (event.key !== storageKey) {
         return
       }

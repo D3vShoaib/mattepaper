@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react"
+import { TextFontIcon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { liveQuery } from "dexie"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +13,10 @@ import {
 import { db, type FontAsset } from "@/db"
 import { importFont } from "@/features/fonts/import-font"
 import { ResetSetting } from "./ResetSetting"
-import type { ReaderSettings } from "@/stores/reader-settings"
+import {
+  BUNDLED_FONT_ID,
+  type ReaderSettings,
+} from "@/features/reading/reader-settings"
 
 export function FontSelector({
   settings,
@@ -59,6 +64,7 @@ export function FontSelector({
   const missing =
     settings.font === "custom" &&
     settings.fontAssetId &&
+    settings.fontAssetId !== BUNDLED_FONT_ID &&
     fonts &&
     !fonts.some((font) => font.id === settings.fontAssetId)
   const label =
@@ -66,8 +72,10 @@ export function FontSelector({
       ? "Serif"
       : selected === "sans"
         ? "Sans"
-        : (fonts?.find((font) => `font:${font.id}` === selected)?.name ??
-          (missing ? "Missing font" : "Loading font…"))
+        : selected === `font:${BUNDLED_FONT_ID}`
+          ? "Libron-Regular"
+          : (fonts?.find((font) => `font:${font.id}` === selected)?.name ??
+            (missing ? "Missing font" : "Loading font…"))
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -91,11 +99,14 @@ export function FontSelector({
         >
           <SelectTrigger
             aria-label="Font family"
-            className="h-8 min-w-0 flex-1"
+            className="h-10 min-w-0 flex-1 text-sm"
           >
             <SelectValue>{label}</SelectValue>
           </SelectTrigger>
           <SelectContent alignItemWithTrigger={false} align="start">
+            <SelectItem value={`font:${BUNDLED_FONT_ID}`}>
+              Libron-Regular
+            </SelectItem>
             <SelectItem value="serif">Serif</SelectItem>
             <SelectItem value="sans">Sans</SelectItem>
             {fonts?.map((font) => (
@@ -105,6 +116,7 @@ export function FontSelector({
             ))}
             {settings.font === "custom" &&
               settings.fontAssetId &&
+              settings.fontAssetId !== BUNDLED_FONT_ID &&
               (!fonts || missing) && (
                 <SelectItem value={`font:${settings.fontAssetId}`} disabled>
                   {missing ? "Missing font" : "Loading font…"}
@@ -127,16 +139,17 @@ export function FontSelector({
         <Button
           type="button"
           variant="outline"
-          size="lg"
+          size="icon-lg"
+          className="size-10 shrink-0"
+          aria-label={busy ? "Loading font…" : "Load font"}
+          title={busy ? "Loading font…" : "Load font"}
+          aria-busy={busy}
           disabled={disabled || busy}
           onClick={() => input.current?.click()}
         >
-          {busy ? "Loading…" : "Load font"}
+          <HugeiconsIcon icon={TextFontIcon} className="size-5" />
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        TTF, OTF, WOFF, or WOFF2. Saved on this device.
-      </p>
       {missing && (
         <p role="status" className="text-xs text-destructive">
           The saved font file is missing; the reader will use a serif font.

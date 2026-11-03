@@ -40,7 +40,12 @@ import {
 } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowDown01Icon, ColorPickerIcon, Tick02Icon, Copy01Icon } from "@hugeicons/core-free-icons"
+import {
+  ArrowDown01Icon,
+  ColorPickerIcon,
+  Tick02Icon,
+  Copy01Icon,
+} from "@hugeicons/core-free-icons"
 
 /* -------------------------------------------------------------------------- */
 /*                                    Types                                   */
@@ -1392,8 +1397,7 @@ const SWATCH_CLASS =
   "forced-color-adjust-none relative inline-flex size-4 shrink-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:inset-ring after:inset-ring-foreground/10"
 
 /* A small square chip takes the shadcn Checkbox's radius in each style. */
-const SWATCH_SQUARE =
-  "rounded-[4px]"
+const SWATCH_SQUARE = "rounded-[4px]"
 
 /* A slash through an empty swatch, the convention for "no color". */
 const EMPTY_SWATCH =
@@ -1530,7 +1534,7 @@ export function ColorPickerTrigger({
         <span
           data-icon="inline-end"
           aria-hidden="true"
-          className="text-muted-foreground flex"
+          className="flex text-muted-foreground"
         >
           {CHEVRON_ICON}
         </span>
@@ -1718,8 +1722,7 @@ export function ColorPickerContent({
 
 /* Bespoke spacing, a step tighter than each style's popover gap: the area,
    the sliders and the fields read as one control. */
-const PANEL_CLASS =
-  "flex w-full min-w-0 flex-col gap-2.5"
+const PANEL_CLASS = "flex w-full min-w-0 flex-col gap-2.5"
 
 export type ColorPickerPanelProps = ComponentProps<"div">
 
@@ -2300,7 +2303,11 @@ export function ColorPickerEyeDropper({
       {...props}
     >
       {children === undefined ? (
-        <HugeiconsIcon icon={ColorPickerIcon} strokeWidth={2} aria-hidden="true" />
+        <HugeiconsIcon
+          icon={ColorPickerIcon}
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       ) : (
         children
       )}
@@ -2535,7 +2542,7 @@ export function ColorPickerChannelInput({
       {...spin}
       data-channel={channel}
       className={cn(
-        "h-auto min-w-0 self-stretch pe-1 ps-2 tabular-nums",
+        "h-auto min-w-0 self-stretch ps-2 pe-1 tabular-nums",
         /* Each field starts at its widest value plus padding, in ch so it
            tracks the font, where a tabular digit measures 1.03ch: 255 or 360,
            99.9 for OKLCH lightness, 0.399, 359.9, 100% and six hex digits. A
@@ -2612,8 +2619,7 @@ const DIVIDER = <Separator orientation="vertical" aria-hidden="true" />
    less a pull-in), so the format button met the first divider. Each rung
    repeats that inset on the right. maia and luma take 5px a side, concentric
    with the pill: 8px a side clipped OKLCH in the popover on a phone. */
-const FORMAT_ADDON_CLASS =
-  "pr-[0.225rem]"
+const FORMAT_ADDON_CLASS = "pr-[0.225rem]"
 
 export type ColorPickerFieldsProps = Omit<
   ComponentProps<typeof InputGroup>,
@@ -2695,7 +2701,7 @@ export function ColorPickerFields({
                     <span className="w-12 shrink-0 font-medium">
                       {FORMAT_LABELS[item]}
                     </span>
-                    <span className="text-muted-foreground truncate text-xs tabular-nums">
+                    <span className="truncate text-xs text-muted-foreground tabular-nums">
                       {formatColor(context.display, item).replace(
                         /^\w+\(|\)$/g,
                         ""
@@ -2819,7 +2825,7 @@ export function ColorPickerSwatches({
         data-slot="color-picker-swatches"
         data-empty={activeId ? undefined : ""}
         className={cn(
-          "group/color-picker-swatches data-empty:focus-visible:outline-ring grid grid-cols-[repeat(auto-fill,var(--color-picker-swatch-size))] justify-between gap-x-1 gap-y-1.5 outline-none [--color-picker-swatch-size:calc(var(--spacing)*6)] aria-disabled:opacity-50 data-empty:focus-visible:outline-2 data-empty:focus-visible:outline-offset-2",
+          "group/color-picker-swatches grid grid-cols-[repeat(auto-fill,var(--color-picker-swatch-size))] justify-between gap-x-1 gap-y-1.5 outline-none [--color-picker-swatch-size:calc(var(--spacing)*6)] aria-disabled:opacity-50 data-empty:focus-visible:outline-2 data-empty:focus-visible:outline-offset-2 data-empty:focus-visible:outline-ring",
           className
         )}
         onFocus={(event) => {
@@ -2882,8 +2888,7 @@ export function ColorPickerSwatches({
 
 /* A 24px chip takes the shadcn Select item's radius, square in lyra and sera.
    The keyboard ring is an offset outline, so it never sits on the color. */
-const SWATCH_ITEM_SQUARE =
-  "rounded-md"
+const SWATCH_ITEM_SQUARE = "rounded-md"
 
 const SWATCH_ITEM_CLASS =
   "forced-color-adjust-none relative flex size-(--color-picker-swatch-size) shrink-0 cursor-default items-center justify-center outline-offset-2 transition-[scale] duration-150 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:inset-ring after:inset-ring-foreground/10 not-aria-disabled:hover:scale-110 aria-disabled:opacity-40 motion-reduce:transition-none group-focus-visible/color-picker-swatches:data-active:outline-2 group-focus-visible/color-picker-swatches:data-active:outline-ring [&_svg]:size-3.5"

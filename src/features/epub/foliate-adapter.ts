@@ -1,5 +1,11 @@
 import { listenForReaderTaps, type ReaderInteraction } from "./reader-taps"
-import type { ReaderAppearance, ReaderSettings } from "@/stores/reader-settings"
+import { chapterScrollProgress } from "./chapter-progress"
+import {
+  BUNDLED_FONT_ID,
+  BUNDLED_FONT_PATH,
+  type ReaderAppearance,
+  type ReaderSettings,
+} from "@/features/reading/reader-settings"
 import {
   getReaderPalette,
   type ReaderPalette,
@@ -31,6 +37,7 @@ interface FoliateBook {
 interface Relocation {
   cfi?: string
   fraction?: number
+  chapterFraction?: number
   tocItem?: { href?: string; label?: string }
 }
 export interface ReaderView extends HTMLElement {
@@ -132,13 +139,21 @@ export function applyReaderSettings(
     "margin-left": `${settings.marginLeft}px`,
     "margin-right": `${settings.marginRight}px`,
   }
+  view.renderer.toggleAttribute(
+    "no-continuous-scroll",
+    settings.mode === "scrolled"
+  )
   for (const [name, value] of Object.entries(attributes)) {
     if (view.renderer.getAttribute(name) !== value)
       view.renderer.setAttribute(name, value)
   }
   const customFont =
-    settings.font === "custom" && fontUrl?.startsWith("blob:")
-      ? fontUrl
+    settings.font === "custom"
+      ? settings.fontAssetId === BUNDLED_FONT_ID
+        ? new URL(BUNDLED_FONT_PATH, window.location.href).href
+        : fontUrl?.startsWith("blob:")
+          ? fontUrl
+          : undefined
       : undefined
   const family = customFont
     ? '"Mattepaper Custom", Georgia, serif'
@@ -187,10 +202,40 @@ export async function createReader(
   const book = (await makeBook(file)) as FoliateBook
   const view = document.createElement("foliate-view") as ReaderView
   view.style.cssText = "display:block;width:100%;height:100%"
-  const handle = (event: Event) =>
-    onRelocate((event as CustomEvent<Relocation>).detail)
+  let chapterFraction: number | undefined
+  const onRendererRelocate = (event: Event) => {
+    const detail = (event as CustomEvent<{ fraction?: number; size?: number }>)
+      .detail
+    const scroller =
+      view.renderer.shadowRoot?.querySelector<HTMLElement>("#container")
+    if (view.renderer.getAttribute("flow") === "scrolled" && scroller) {
+      const horizontal = scroller.classList.contains("vertical")
+      chapterFraction = horizontal
+        ? chapterScrollProgress(
+            Math.abs(scroller.scrollLeft),
+            scroller.clientWidth,
+            scroller.scrollWidth
+          )
+        : chapterScrollProgress(
+            scroller.scrollTop,
+            scroller.clientHeight,
+            scroller.scrollHeight
+          )
+      return
+    }
+    chapterFraction = Number.isFinite(detail.fraction)
+      ? Math.max(0, Math.min(1, detail.fraction! + (detail.size ?? 0)))
+      : undefined
+  }
+  const handle = (event: Event) => {
+    const detail = (event as CustomEvent<Relocation>).detail
+    detail.chapterFraction = chapterFraction
+    onRelocate(detail)
+  }
   const documentListeners = new Map<Document, () => void>()
+  let destroyed = false
   const onLoad = (event: Event) => {
+    if (destroyed) return
     const doc = (event as CustomEvent<{ doc: Document }>).detail.doc
     if (documentListeners.has(doc)) return
     const noSelect = doc.createElement("style")
@@ -207,9 +252,7 @@ export async function createReader(
     documentListeners.set(doc, release)
     window?.addEventListener("unload", release, { once: true })
   }
-  view.addEventListener("load", onLoad)
-  view.addEventListener("relocate", handle)
-  view.addEventListener("external-link", (event) => {
+  const onExternalLink = (event: Event) => {
     event.preventDefault()
     const href = (event as CustomEvent<{ href: string }>).detail.href
     try {
@@ -219,10 +262,28 @@ export async function createReader(
     } catch {
       /* Ignore malformed external links. */
     }
-  })
+  }
+  const destroy = () => {
+    if (destroyed) return
+    destroyed = true
+    view.removeEventListener("relocate", handle)
+    view.removeEventListener("load", onLoad)
+    view.removeEventListener("external-link", onExternalLink)
+    view.renderer?.removeEventListener("relocate", onRendererRelocate, true)
+    for (const release of documentListeners.values()) release()
+    documentListeners.clear()
+    view.close()
+    view.remove()
+    book.destroy?.()
+  }
+
+  view.addEventListener("load", onLoad)
+  view.addEventListener("relocate", handle)
+  view.addEventListener("external-link", onExternalLink)
   container.append(view)
   try {
     await view.open(book)
+    view.renderer.addEventListener("relocate", onRendererRelocate, true)
     applyReaderSettings(view, settings)
     try {
       await view.init({ lastLocation })
@@ -230,21 +291,8 @@ export async function createReader(
       await view.init({})
     }
   } catch (error) {
-    view.close()
-    view.remove()
-    book.destroy?.()
+    destroy()
     throw error
   }
-  return {
-    view,
-    destroy: () => {
-      view.removeEventListener("relocate", handle)
-      view.removeEventListener("load", onLoad)
-      for (const stop of documentListeners.values()) stop()
-      documentListeners.clear()
-      view.close()
-      view.remove()
-      book.destroy?.()
-    },
-  }
+  return { view, destroy }
 }

@@ -13,10 +13,10 @@
     <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
-      content="A beautiful, local-first EPUB reader. Your books stay on your device."
+        content="Read EPUB books offline. Your books stay on this device."
     />
     <meta name="application-name" content="Mattepaper" />
-    <meta name="theme-color" content="#16161a" />
+    <meta name="theme-color" content="#121212" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
@@ -25,7 +25,7 @@
 
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#16161a" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#121212" />
 
     <title>Mattepaper</title>
 
@@ -34,16 +34,14 @@
     <style>
       :root {
         color-scheme: light;
-        --splash-bg: #f7f5f0;
-        --splash-fg: #1c1b21;
-        --splash-muted: #6e6a78;
+        --splash-bg: #ffffff;
+        --splash-fg: #171717;
       }
 
       html.dark {
         color-scheme: dark;
-        --splash-bg: #16161a;
-        --splash-fg: #f4f0e6;
-        --splash-muted: #918d9c;
+        --splash-bg: #121212;
+        --splash-fg: #f5f5f5;
       }
 
       html,
@@ -89,21 +87,10 @@
         margin: clamp(20px, 2.6vmin, 32px) 0 0;
         color: var(--splash-fg);
         font-family:
-          "Space Grotesk Variable", "Space Grotesk", "Segoe UI", sans-serif;
+          "IBM Plex Sans Variable", "Segoe UI", sans-serif;
         font-size: clamp(24px, 3vmin, 36px);
         font-weight: 500;
-        letter-spacing: -0.03em;
         line-height: 1;
-      }
-
-      .app-splash__tagline {
-        margin: clamp(8px, 1vmin, 12px) 0 0;
-        color: var(--splash-muted);
-        font-family:
-          "Space Grotesk Variable", "Space Grotesk", "Segoe UI", sans-serif;
-        font-size: clamp(10px, 1.2vmin, 13px);
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -126,7 +113,6 @@
           height="88"
         />
         <p class="app-splash__title">Mattepaper</p>
-        <p class="app-splash__tagline">Your local library</p>
       </div>
     </div>
     <div id="root"></div>

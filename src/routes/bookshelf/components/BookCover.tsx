@@ -14,11 +14,11 @@ export function BookCover({ book }: { book: Book }) {
     }
   }, [book.cover])
   return (
-    <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-secondary shadow-sm">
+    <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-secondary">
       {url ? (
         <img src={url} alt="" className="size-full object-cover" />
       ) : (
-        <div className="flex size-full flex-col justify-end bg-gradient-to-br from-primary/25 to-background p-4">
+        <div className="flex size-full flex-col justify-end bg-secondary p-4">
           <span className="line-clamp-4 font-heading text-lg font-medium">
             {book.title}
           </span>

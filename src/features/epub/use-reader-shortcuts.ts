@@ -1,11 +1,8 @@
 import { useEffect } from "react"
-import type { ReaderInteraction } from "@/features/epub/reader-taps"
-
-const shortcutActions: Record<string, "previous" | "next" | "toggle"> = {
-  arrowleft: "previous",
-  arrowright: "next",
-  m: "toggle",
-}
+import {
+  getShortcutAction,
+  type ReaderInteraction,
+} from "@/features/epub/reader-taps"
 
 /** Arrow keys turn pages and M toggles the controls. */
 export function useReaderShortcuts(
@@ -24,7 +21,7 @@ export function useReaderShortcuts(
           ))
       )
         return
-      const action = shortcutActions[event.key.toLowerCase()]
+      const action = getShortcutAction(event.key)
       if (action) {
         event.preventDefault()
         onInteraction({ type: "shortcut", action })

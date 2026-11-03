@@ -1,4 +1,8 @@
-import { RefreshCcwIcon, Settings01Icon } from "@hugeicons/core-free-icons"
+import {
+  Cancel01Icon,
+  RefreshCcwIcon,
+  Settings01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useShallow } from "zustand/react/shallow"
 import { Button } from "@/components/ui/button"
@@ -6,16 +10,12 @@ import {
   Drawer,
   DrawerContent,
   DrawerClose,
-  DrawerFooter,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { ReaderSettingsFields } from "@/features/reading/ReaderSettingsFields"
-import { Separator } from "@/components/ui/separator"
-import {
-  effectiveReaderSettings,
-  useReaderSettings,
-} from "@/stores/reader-settings"
+import { effectiveReaderSettings } from "@/features/reading/reader-settings"
+import { useReaderSettings } from "@/stores/reader-settings"
 
 export function ReaderSettingsDrawer({
   bookId,
@@ -46,16 +46,45 @@ export function ReaderSettingsDrawer({
       <DrawerTrigger
         render={
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon-lg"
+            className="size-10 rounded-full [&_svg]:size-5"
             aria-label="Reading settings"
           />
         }
       >
-        <HugeiconsIcon icon={Settings01Icon} />
+        <HugeiconsIcon icon={Settings01Icon} className="size-5" />
       </DrawerTrigger>
       <DrawerContent className="max-h-[60dvh]">
-        <DrawerTitle className="sr-only">Reading settings</DrawerTitle>
+        <div className="mx-auto flex w-full max-w-xl shrink-0 items-center justify-between gap-3 px-6 py-4">
+          <DrawerTitle className="text-lg font-semibold">
+            Reading settings
+          </DrawerTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              title="Reset to global settings"
+              disabled={!hasOverrides}
+              onClick={() => resetBook(bookId)}
+            >
+              <HugeiconsIcon icon={RefreshCcwIcon} />
+              Reset
+            </Button>
+            <DrawerClose
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  aria-label="Close reading settings"
+                />
+              }
+            >
+              <HugeiconsIcon icon={Cancel01Icon} />
+            </DrawerClose>
+          </div>
+        </div>
         <div className="mx-auto min-h-0 w-full max-w-xl flex-1 overflow-y-auto px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <ReaderSettingsFields
             settings={settings}
@@ -68,28 +97,6 @@ export function ReaderSettingsDrawer({
             fixedLayout={fixedLayout}
           />
         </div>
-        <Separator />
-        <DrawerFooter className="mx-auto w-full max-w-xl flex-row gap-2 px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <Button
-            type="button"
-            variant="outline"
-            className="basis-3/10"
-            title="Reset to global settings"
-            aria-label="Reset to global settings"
-            disabled={!hasOverrides}
-            onClick={() => resetBook(bookId)}
-          >
-            <HugeiconsIcon icon={RefreshCcwIcon} />
-            Reset
-          </Button>
-          <DrawerClose
-            render={
-              <Button type="button" variant="outline" className="basis-7/10" />
-            }
-          >
-            Close
-          </DrawerClose>
-        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )

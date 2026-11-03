@@ -12,17 +12,34 @@ import {
 } from "@/components/ui/select"
 import { NumberStepper } from "./NumberStepper"
 import { FontSelector } from "./FontSelector"
-import { ColorPicker } from "@/components/reui/color-picker"
+import { ColorInput } from "@/components/ui/color-input"
 import { ResetSetting } from "./ResetSetting"
 import { useReaderPalette } from "./reader-palette"
 import type {
   ReaderAction,
   ReaderSettings,
   TapZoneKey,
-} from "@/stores/reader-settings"
+} from "@/features/reading/reader-settings"
 
 type Change = (value: Partial<ReaderSettings>) => void
 type Key = keyof ReaderSettings
+
+function SettingsSection({
+  title,
+  children,
+}: {
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <section className="space-y-5">
+      <Separator className="mb-6" />
+      <h3 className="text-base font-semibold">{title}</h3>
+      {children}
+    </section>
+  )
+}
+
 function Choices<T extends string>({
   label,
   value,
@@ -47,7 +64,7 @@ function Choices<T extends string>({
           <Button
             key={option.value}
             type="button"
-            className="min-w-0 flex-1 px-1 font-normal"
+            className="h-10 min-w-0 flex-1 px-2 text-sm font-normal"
             variant={value === option.value ? "default" : "outline"}
             aria-pressed={value === option.value}
             onClick={() => onChange(option.value)}
@@ -75,7 +92,7 @@ function ToggleSetting({
   children?: ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex min-h-10 items-center justify-between gap-4">
       <span className="min-w-0 flex-1 text-sm">{label}</span>
       <div className="flex items-center gap-2">
         <ResetSetting label={label} onReset={onReset} />
@@ -122,10 +139,10 @@ export function ReaderSettingsFields({
   const reset = (...keys: Key[]) =>
     keys.some(isResettable) ? () => onReset(keys) : undefined
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <section>
-        <h3 className="text-sm font-medium">Appearance</h3>
-        <div className="mt-4 space-y-5">
+        <h3 className="text-base font-semibold">Typography and color</h3>
+        <div className="mt-5 space-y-6">
           <ToggleSetting
             label="Custom background color"
             checked={settings.backgroundColor !== null}
@@ -141,13 +158,10 @@ export function ReaderSettingsFields({
             onReset={reset("backgroundColor")}
           >
             {settings.backgroundColor && (
-              <ColorPicker
-                aria-label="Background color"
+              <ColorInput
+                label="Background color"
                 value={settings.backgroundColor}
-                format="hex"
-                onValueChange={(backgroundColor) => {
-                  if (backgroundColor) onChange({ backgroundColor })
-                }}
+                onChange={(backgroundColor) => onChange({ backgroundColor })}
               />
             )}
           </ToggleSetting>
@@ -183,13 +197,10 @@ export function ReaderSettingsFields({
               />
               {settings.fontColor && (
                 <div className="flex justify-end">
-                  <ColorPicker
-                    aria-label="Text color"
+                  <ColorInput
+                    label="Text color"
                     value={settings.fontColor}
-                    format="hex"
-                    onValueChange={(fontColor) => {
-                      if (fontColor) onChange({ fontColor })
-                    }}
+                    onChange={(fontColor) => onChange({ fontColor })}
                   />
                 </div>
               )}
@@ -205,25 +216,6 @@ export function ReaderSettingsFields({
               onReset={reset("fontSize")}
             />
             <NumberStepper
-              label="Text scale"
-              value={settings.fontScale}
-              min={80}
-              max={150}
-              step={5}
-              unit="%"
-              onChange={(fontScale) => onChange({ fontScale })}
-              onReset={reset("fontScale")}
-            />
-            <NumberStepper
-              label="Font weight"
-              value={settings.fontWeight}
-              min={400}
-              max={700}
-              step={100}
-              onChange={(fontWeight) => onChange({ fontWeight })}
-              onReset={reset("fontWeight")}
-            />
-            <NumberStepper
               label="Line spacing"
               value={settings.lineHeight}
               min={1.1}
@@ -232,137 +224,146 @@ export function ReaderSettingsFields({
               onChange={(lineHeight) => onChange({ lineHeight })}
               onReset={reset("lineHeight")}
             />
-            <Choices
-              label="Text alignment"
-              value={settings.alignment}
-              options={[
-                { value: "start", label: "Start" },
-                { value: "center", label: "Center" },
-                { value: "end", label: "End" },
-                { value: "justify", label: "Justify" },
-              ]}
-              onChange={(alignment) => onChange({ alignment })}
-              onReset={reset("alignment")}
-            />
-            <Separator />
-            <div className="space-y-3">
-              <ToggleSetting
-                label="Respect publisher formatting"
-                checked={settings.respectPublisherFormatting}
-                onChange={(respectPublisherFormatting) =>
-                  onChange({ respectPublisherFormatting })
-                }
-                onReset={reset("respectPublisherFormatting")}
-              />
-              <p className="text-xs text-muted-foreground">
-                Turn this off to apply italic or underline across the book.
-              </p>
-              <ToggleSetting
-                label="Italic"
-                checked={settings.italic}
-                disabled={settings.respectPublisherFormatting}
-                onChange={(italic) => onChange({ italic })}
-                onReset={reset("italic")}
-              />
-              <ToggleSetting
-                label="Underline"
-                checked={settings.underline}
-                disabled={settings.respectPublisherFormatting}
-                onChange={(underline) => onChange({ underline })}
-                onReset={reset("underline")}
-              />
-            </div>
-            <Separator />
-            <div className="space-y-3">
-              <ToggleSetting
-                label="Text shadow"
-                checked={settings.shadowEnabled}
-                onChange={(shadowEnabled) => onChange({ shadowEnabled })}
-                onReset={reset("shadowEnabled")}
-              />
-              {settings.shadowEnabled && (
+            <SettingsSection title="Text styling">
+              <div className="space-y-5">
+                <NumberStepper
+                  label="Text scale"
+                  value={settings.fontScale}
+                  min={80}
+                  max={150}
+                  step={5}
+                  unit="%"
+                  onChange={(fontScale) => onChange({ fontScale })}
+                  onReset={reset("fontScale")}
+                />
+                <NumberStepper
+                  label="Font weight"
+                  value={settings.fontWeight}
+                  min={400}
+                  max={700}
+                  step={100}
+                  onChange={(fontWeight) => onChange({ fontWeight })}
+                  onReset={reset("fontWeight")}
+                />
+                <Choices
+                  label="Text alignment"
+                  value={settings.alignment}
+                  options={[
+                    { value: "start", label: "Start" },
+                    { value: "center", label: "Center" },
+                    { value: "end", label: "End" },
+                    { value: "justify", label: "Justify" },
+                  ]}
+                  onChange={(alignment) => onChange({ alignment })}
+                  onReset={reset("alignment")}
+                />
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm">Shadow color</span>
-                    <div className="flex items-center gap-1">
-                      <ResetSetting
-                        label="Shadow color"
-                        onReset={reset("shadowColor")}
-                      />
-                      <ColorPicker
-                        aria-label="Shadow color"
-                        value={settings.shadowColor}
-                        format="hex"
-                        onValueChange={(shadowColor) => {
-                          if (shadowColor) onChange({ shadowColor })
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <NumberStepper
-                    label="Shadow horizontal offset"
-                    value={settings.shadowX}
-                    min={-8}
-                    max={8}
-                    step={1}
-                    unit="px"
-                    onChange={(shadowX) => onChange({ shadowX })}
-                    onReset={reset("shadowX")}
+                  <ToggleSetting
+                    label="Respect publisher formatting"
+                    checked={settings.respectPublisherFormatting}
+                    onChange={(respectPublisherFormatting) =>
+                      onChange({ respectPublisherFormatting })
+                    }
+                    onReset={reset("respectPublisherFormatting")}
                   />
-                  <NumberStepper
-                    label="Shadow vertical offset"
-                    value={settings.shadowY}
-                    min={-8}
-                    max={8}
-                    step={1}
-                    unit="px"
-                    onChange={(shadowY) => onChange({ shadowY })}
-                    onReset={reset("shadowY")}
+                  <ToggleSetting
+                    label="Italic"
+                    checked={settings.italic}
+                    disabled={settings.respectPublisherFormatting}
+                    onChange={(italic) => onChange({ italic })}
+                    onReset={reset("italic")}
                   />
-                  <NumberStepper
-                    label="Shadow blur"
-                    value={settings.shadowBlur}
-                    min={0}
-                    max={16}
-                    step={1}
-                    unit="px"
-                    onChange={(shadowBlur) => onChange({ shadowBlur })}
-                    onReset={reset("shadowBlur")}
+                  <ToggleSetting
+                    label="Underline"
+                    checked={settings.underline}
+                    disabled={settings.respectPublisherFormatting}
+                    onChange={(underline) => onChange({ underline })}
+                    onReset={reset("underline")}
                   />
                 </div>
-              )}
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              <Choices
-                label="Font smoothing"
-                value={settings.fontSmoothing}
-                options={[
-                  { value: "system", label: "System" },
-                  { value: "antialiased", label: "Smooth" },
-                ]}
-                onChange={(fontSmoothing) => onChange({ fontSmoothing })}
-                onReset={reset("fontSmoothing")}
-              />
-              <p className="text-xs text-muted-foreground">
-                Smoothing depends on your browser and operating system.
-              </p>
-            </div>
-            <ToggleSetting
-              label="Hyphenation"
-              checked={settings.hyphenation}
-              onChange={(hyphenation) => onChange({ hyphenation })}
-              onReset={reset("hyphenation")}
-            />
+                <div className="space-y-3">
+                  <ToggleSetting
+                    label="Text shadow"
+                    checked={settings.shadowEnabled}
+                    onChange={(shadowEnabled) => onChange({ shadowEnabled })}
+                    onReset={reset("shadowEnabled")}
+                  />
+                  {settings.shadowEnabled && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm">Shadow color</span>
+                        <div className="flex items-center gap-1">
+                          <ResetSetting
+                            label="Shadow color"
+                            onReset={reset("shadowColor")}
+                          />
+                          <ColorInput
+                            label="Shadow color"
+                            value={settings.shadowColor}
+                            onChange={(shadowColor) =>
+                              onChange({ shadowColor })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <NumberStepper
+                        label="Shadow horizontal offset"
+                        value={settings.shadowX}
+                        min={-8}
+                        max={8}
+                        step={1}
+                        unit="px"
+                        onChange={(shadowX) => onChange({ shadowX })}
+                        onReset={reset("shadowX")}
+                      />
+                      <NumberStepper
+                        label="Shadow vertical offset"
+                        value={settings.shadowY}
+                        min={-8}
+                        max={8}
+                        step={1}
+                        unit="px"
+                        onChange={(shadowY) => onChange({ shadowY })}
+                        onReset={reset("shadowY")}
+                      />
+                      <NumberStepper
+                        label="Shadow blur"
+                        value={settings.shadowBlur}
+                        min={0}
+                        max={16}
+                        step={1}
+                        unit="px"
+                        onChange={(shadowBlur) => onChange({ shadowBlur })}
+                        onReset={reset("shadowBlur")}
+                      />
+                    </div>
+                  )}
+                </div>
+                <Choices
+                  label="Font smoothing"
+                  value={settings.fontSmoothing}
+                  options={[
+                    { value: "system", label: "System" },
+                    { value: "antialiased", label: "Smooth" },
+                  ]}
+                  onChange={(fontSmoothing) => onChange({ fontSmoothing })}
+                  onReset={reset("fontSmoothing")}
+                />
+                <ToggleSetting
+                  label="Hyphenation"
+                  checked={settings.hyphenation}
+                  onChange={(hyphenation) => onChange({ hyphenation })}
+                  onReset={reset("hyphenation")}
+                />
+              </div>
+            </SettingsSection>
           </fieldset>
         </div>
       </section>
-      <Separator />
-      <section>
-        <h3 className="text-sm font-medium">Text spacing</h3>
+      <SettingsSection title="Text spacing">
         <fieldset
           disabled={fixedLayout}
-          className="mt-4 space-y-5 disabled:opacity-50"
+          className="space-y-5 disabled:opacity-50"
         >
           <NumberStepper
             label="Letter spacing"
@@ -405,10 +406,10 @@ export function ReaderSettingsFields({
             onReset={reset("textIndent")}
           />
         </fieldset>
-      </section>
-      <Separator />
+      </SettingsSection>
       <section>
-        <h3 className="text-sm font-medium">Page layout</h3>
+        <Separator className="mb-6" />
+        <h3 className="text-base font-semibold">Page layout</h3>
         <fieldset
           disabled={fixedLayout}
           className="mt-4 space-y-5 disabled:opacity-50"
@@ -423,11 +424,6 @@ export function ReaderSettingsFields({
             onChange={(mode) => onChange({ mode })}
             onReset={reset("mode")}
           />
-          {settings.mode === "scrolled" && (
-            <p className="text-xs text-muted-foreground">
-              Scroll freely or use Previous and Next to move by a screen.
-            </p>
-          )}
           <fieldset
             disabled={settings.mode === "scrolled"}
             className="disabled:opacity-50"
@@ -443,67 +439,66 @@ export function ReaderSettingsFields({
               onReset={reset("columns")}
             />
           </fieldset>
-          <NumberStepper
-            label="Column gap"
-            value={settings.columnGap}
-            min={0}
-            max={96}
-            step={2}
-            unit="px"
-            onChange={(columnGap) => onChange({ columnGap })}
-            onReset={reset("columnGap")}
-          />
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <NumberStepper
-              label="Top margin"
-              value={settings.marginTop}
-              min={0}
-              max={96}
-              step={2}
-              unit="px"
-              onChange={(marginTop) => onChange({ marginTop })}
-              onReset={reset("marginTop")}
-            />
-            <NumberStepper
-              label="Right margin"
-              value={settings.marginRight}
-              min={0}
-              max={96}
-              step={2}
-              unit="px"
-              onChange={(marginRight) => onChange({ marginRight })}
-              onReset={reset("marginRight")}
-            />
-            <NumberStepper
-              label="Bottom margin"
-              value={settings.marginBottom}
-              min={0}
-              max={96}
-              step={2}
-              unit="px"
-              onChange={(marginBottom) => onChange({ marginBottom })}
-              onReset={reset("marginBottom")}
-            />
-            <NumberStepper
-              label="Left margin"
-              value={settings.marginLeft}
-              min={0}
-              max={96}
-              step={2}
-              unit="px"
-              onChange={(marginLeft) => onChange({ marginLeft })}
-              onReset={reset("marginLeft")}
-            />
-          </div>
+          <SettingsSection title="Margins and column spacing">
+            <div className="space-y-5">
+              <NumberStepper
+                label="Column gap"
+                value={settings.columnGap}
+                min={0}
+                max={96}
+                step={2}
+                unit="px"
+                onChange={(columnGap) => onChange({ columnGap })}
+                onReset={reset("columnGap")}
+              />
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <NumberStepper
+                  label="Top margin"
+                  value={settings.marginTop}
+                  min={0}
+                  max={96}
+                  step={2}
+                  unit="px"
+                  onChange={(marginTop) => onChange({ marginTop })}
+                  onReset={reset("marginTop")}
+                />
+                <NumberStepper
+                  label="Right margin"
+                  value={settings.marginRight}
+                  min={0}
+                  max={96}
+                  step={2}
+                  unit="px"
+                  onChange={(marginRight) => onChange({ marginRight })}
+                  onReset={reset("marginRight")}
+                />
+                <NumberStepper
+                  label="Bottom margin"
+                  value={settings.marginBottom}
+                  min={0}
+                  max={96}
+                  step={2}
+                  unit="px"
+                  onChange={(marginBottom) => onChange({ marginBottom })}
+                  onReset={reset("marginBottom")}
+                />
+                <NumberStepper
+                  label="Left margin"
+                  value={settings.marginLeft}
+                  min={0}
+                  max={96}
+                  step={2}
+                  unit="px"
+                  onChange={(marginLeft) => onChange({ marginLeft })}
+                  onReset={reset("marginLeft")}
+                />
+              </div>
+            </div>
+          </SettingsSection>
         </fieldset>
       </section>
-      <Separator />
-      <section>
-        <h3 className="text-sm font-medium">Tap zones</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Choose what a tap does in each part of the screen.
-        </p>
-        <div className="mt-4 space-y-4">
+      <SettingsSection title="Tap zones">
+        <div className="space-y-4">
           {zoneOptions.map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between gap-3">
               <span className="text-sm">{label}</span>
@@ -542,13 +537,7 @@ export function ReaderSettingsFields({
             </div>
           ))}
         </div>
-        {!zoneOptions.some(({ key }) => settings[key] === "toggle") && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            A show-controls button is available if the bar is hidden and no zone
-            is assigned to it.
-          </p>
-        )}
-      </section>
+      </SettingsSection>
     </div>
   )
 }

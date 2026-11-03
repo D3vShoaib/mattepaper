@@ -24,8 +24,10 @@ export function useImportBooks() {
         if ((await importBook(file)) === "duplicate")
           duplicates.push(file.name.replace(/\.epub$/i, ""))
         else imported++
-      } catch {
-        failures.push(file.name)
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Could not read this file."
+        failures.push(`${file.name}: ${message}`)
       }
       setPending((n) => Math.max(0, n - 1))
     }
@@ -42,10 +44,7 @@ export function useImportBooks() {
           .filter(Boolean)
           .join(" · ")
       )
-    if (failures.length)
-      setError(
-        `Could not import ${failures.join(", ")}. Check the EPUB file and available browser storage.`
-      )
+    if (failures.length) setError(`Could not import ${failures.join("; ")}`)
     setPending(0)
     setImporting(false)
   }

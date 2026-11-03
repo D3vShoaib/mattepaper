@@ -5,6 +5,7 @@ export interface Book {
   fingerprint: string
   title: string
   author: string
+  status: BookStatus
   language?: string
   publisher?: string
   description?: string
@@ -16,6 +17,8 @@ export interface Book {
   fileName: string
   fileSize: number
 }
+
+export type BookStatus = "Unread" | "Reading" | "Finished"
 export interface BookFile {
   id: string
   data: Blob
@@ -43,3 +46,23 @@ db.version(2).stores({
   bookFiles: "id",
   fonts: "id,importedAt",
 })
+
+db.version(3)
+  .stores({
+    books: "id,&fingerprint,importedAt,lastReadAt,status",
+    bookFiles: "id",
+    fonts: "id,importedAt",
+  })
+  .upgrade(async (transaction) => {
+    await transaction
+      .table("books")
+      .toCollection()
+      .modify((book) => {
+        book.status =
+          book.progress >= 0.99
+            ? "Finished"
+            : book.progress > 0
+              ? "Reading"
+              : "Unread"
+      })
+  })

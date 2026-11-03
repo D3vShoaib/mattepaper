@@ -44,11 +44,11 @@ export function NumberStepper({
     if (result !== value) onChange(result)
   }
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="flex min-h-10 flex-wrap items-center justify-between gap-4">
       <span className="text-sm">{label}</span>
       <div className="flex items-center gap-1">
         <ResetSetting label={label} onReset={onReset} />
-        <div className="inline-flex h-8 max-w-full items-center overflow-hidden rounded-md border border-input focus-within:ring-2 focus-within:ring-ring/30">
+        <div className="inline-flex h-10 max-w-full items-center overflow-hidden rounded-md border border-input focus-within:ring-2 focus-within:ring-ring/30">
           <Button
             type="button"
             variant="ghost"

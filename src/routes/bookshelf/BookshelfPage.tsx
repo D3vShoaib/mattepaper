@@ -1,6 +1,10 @@
 import { useRef, useState } from "react"
-import { Search01Icon } from "@hugeicons/core-free-icons"
+import { Search01Icon, Settings01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { Link } from "react-router"
+import { cn } from "cn"
+import { buttonVariants } from "@/components/ui/button"
+import { navDirection } from "@/lib/nav-direction"
 import { useLibrary } from "@/features/library/use-library"
 import { useImportBooks } from "@/features/library/use-import-books"
 import { PwaInstallButton } from "@/features/pwa/PwaInstallButton"
@@ -20,13 +24,22 @@ export function BookshelfPage() {
   const layout = useBookshelfSettings((state) => state.layout)
   const columns = useBookshelfSettings((state) => state.columns)
   const fileInput = useRef<HTMLInputElement>(null)
-  const { books, visibleBooks, error: libraryError } = useLibrary({
+  const {
+    books,
+    visibleBooks,
+    error: libraryError,
+  } = useLibrary({
     search,
     filter,
     sort,
   })
-  const { importing, pending, notice, error: importError, importFiles } =
-    useImportBooks()
+  const {
+    importing,
+    pending,
+    notice,
+    error: importError,
+    importFiles,
+  } = useImportBooks()
   const error = libraryError || importError
 
   const grid = layout === "Grid"
@@ -37,7 +50,7 @@ export function BookshelfPage() {
     : undefined
 
   return (
-    <section className="bookshelf-shell m-2 flex flex-col rounded-xl bg-muted p-3 dark:bg-[color-mix(in_oklch,var(--background)_75%,var(--muted))]">
+    <section className="bookshelf-shell mx-auto flex max-w-screen-xl flex-col px-4 py-4 sm:px-6">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="relative min-w-0 flex-1 basis-48 sm:max-w-64">
           <HugeiconsIcon
@@ -54,6 +67,18 @@ export function BookshelfPage() {
           />
         </div>
         <ViewOptionsDrawer />
+        <Link
+          to="/settings"
+          viewTransition
+          onClick={navDirection("forward")}
+          aria-label="Settings"
+          title="Settings"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "icon-lg" })
+          )}
+        >
+          <HugeiconsIcon icon={Settings01Icon} />
+        </Link>
         <PwaInstallButton />
         <input
           ref={fileInput}

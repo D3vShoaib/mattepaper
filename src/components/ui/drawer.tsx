@@ -69,7 +69,7 @@ function DrawerOverlay({
     <DrawerPrimitive.Backdrop
       data-slot="drawer-overlay"
       className={cn(
-        "fixed inset-0 z-50 min-h-dvh bg-black/80 opacity-[max(var(--drawer-overlay-min-opacity,0),calc(1-var(--drawer-swipe-progress)))] transition-opacity duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] select-none data-ending-style:pointer-events-none data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-snap-points:[--drawer-overlay-min-opacity:0.5] data-starting-style:opacity-0 data-swiping:duration-0 supports-backdrop-filter:backdrop-blur-xs supports-[-webkit-touch-callout:none]:absolute",
+        "fixed inset-0 z-50 min-h-dvh bg-black/65 opacity-[max(var(--drawer-overlay-min-opacity,0),calc(1-var(--drawer-swipe-progress)))] transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] select-none data-ending-style:pointer-events-none data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*300ms)] data-snap-points:[--drawer-overlay-min-opacity:0.5] data-starting-style:opacity-0 data-swiping:duration-0 supports-[-webkit-touch-callout:none]:absolute",
         className
       )}
       {...props}
@@ -112,7 +112,7 @@ function DrawerContent({
           data-swipe-axis="y"
           data-swipe-direction={swipeDirection}
           className={cn(
-            "group/drawer-popup pointer-events-auto fixed inset-x-2 bottom-2 flex max-h-[calc(100dvh-2rem)] [transform:translateY(var(--drawer-swipe-movement-y,0px))] flex-col rounded-xl border border-border bg-popover text-popover-foreground shadow-xl transition-transform duration-300 ease-out outline-none data-ending-style:translate-y-[110%] data-starting-style:translate-y-[110%] data-swiping:duration-0 motion-reduce:transition-none",
+            "group/drawer-popup pointer-events-auto fixed inset-x-2 bottom-2 flex max-h-[calc(100dvh-2rem)] [transform:translateY(var(--drawer-swipe-movement-y,0px))] flex-col rounded-xl bg-popover text-popover-foreground shadow-xl transition-transform duration-300 ease-out outline-none data-ending-style:translate-y-[110%] data-starting-style:translate-y-[110%] data-swiping:duration-0 motion-reduce:transition-none",
             className
           )}
           {...props}

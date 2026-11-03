@@ -1,13 +1,14 @@
 import type { ReactNode } from "react"
-import { navDirection } from "@/lib/nav-direction"
 import {
+  bookshelfFilters,
+  bookshelfLayouts,
+  bookshelfSorts,
   useBookshelfSettings,
   normalizeColumns,
 } from "@/stores/bookshelf-settings"
 import {
   Drawer,
   DrawerContent,
-  DrawerFooter,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
@@ -23,14 +24,12 @@ import {
   ListViewIcon,
   MinusSignIcon,
   PlusSignIcon,
-  Settings01Icon,
   Sorting01Icon,
   TextIcon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Link } from "react-router"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import {
   Select,
@@ -53,7 +52,7 @@ const optionIcons: Record<string, typeof Book02Icon> = {
   "Date imported": Calendar03Icon,
 }
 
-function ChoiceGroup({
+function ChoiceGroup<Value extends string>({
   label,
   icon,
   value,
@@ -62,9 +61,9 @@ function ChoiceGroup({
 }: {
   label: string
   icon: ReactNode
-  value: string
-  options: string[]
-  onChange: (value: string) => void
+  value: Value
+  options: readonly Value[]
+  onChange: (value: Value) => void
 }) {
   return (
     <fieldset className="min-w-0">
@@ -93,16 +92,16 @@ function ChoiceGroup({
   )
 }
 
-function ChoiceSelect({
+function ChoiceSelect<Value extends string>({
   label,
   value,
   options,
   onChange,
 }: {
   label: string
-  value: string
-  options: string[]
-  onChange: (value: string) => void
+  value: Value
+  options: readonly Value[]
+  onChange: (value: Value) => void
 }) {
   return (
     <div className="space-y-2">
@@ -162,20 +161,20 @@ export function ViewOptionsDrawer() {
             <ChoiceSelect
               label="Status"
               value={filter}
-              options={["All", "Unread", "Reading", "Finished"]}
+              options={bookshelfFilters}
               onChange={setFilter}
             />
             <ChoiceSelect
               label="Sort by"
               value={sort}
-              options={["Last read", "Title", "Author", "Date imported"]}
+              options={bookshelfSorts}
               onChange={setSort}
             />
             <ChoiceGroup
               label="Layout"
               icon={<HugeiconsIcon icon={Layout01Icon} size={16} />}
               value={layout}
-              options={["List", "Grid"]}
+              options={bookshelfLayouts}
               onChange={setLayout}
             />
             <div>
@@ -225,16 +224,6 @@ export function ViewOptionsDrawer() {
             </div>
           </div>
         </div>
-        <DrawerFooter className="mx-auto w-full max-w-2xl px-6 pb-6">
-          <Link
-            to="/settings"
-            viewTransition
-            onClick={navDirection("forward")}
-            className={`${buttonVariants({ variant: "outline", size: "lg" })} font-normal`}
-          >
-            <HugeiconsIcon icon={Settings01Icon} /> Settings
-          </Link>
-        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )

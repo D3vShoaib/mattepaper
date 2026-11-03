@@ -1,5 +1,4 @@
 import { useRef, useState } from "react"
-import { AlertDialog } from "@base-ui/react/alert-dialog"
 import {
   CheckmarkCircle02Icon,
   Delete02Icon,
@@ -15,249 +14,23 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
-import { Textarea } from "@/components/ui/textarea"
-import { db, type Book } from "@/db"
+import type { Book } from "@/db"
 import { useReaderSettings } from "@/stores/reader-settings"
-import { bookStatus, isFinished } from "@/features/library/book-status"
-import { formatBytes } from "@/lib/format"
+import { isFinished } from "@/features/library/book-status"
+import {
+  removeBook,
+  replaceBookCover,
+  setBookStatus,
+  updateBookDetails,
+  type BookDetailsUpdate,
+} from "@/features/library/book-actions"
+import { BookDetailsSheet } from "./BookDetailsSheet"
+import { EditBookSheet } from "./EditBookSheet"
+import { RemoveBookDialog } from "./RemoveBookDialog"
 
 type Dialog = "details" | "edit" | "remove" | null
-
-const dateFormat = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-})
-
-function DetailRow({ label, value }: { label: string; value?: string }) {
-  if (!value) return null
-  return (
-    <div className="grid gap-0.5">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm break-words">{value}</dd>
-    </div>
-  )
-}
-
-function DetailsSheet({
-  book,
-  open,
-  onOpenChange,
-}: {
-  book: Book
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const state = bookStatus(book)
-  const status =
-    state === "Reading"
-      ? `Reading · ${Math.round(book.progress * 100)}%`
-      : state
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle className="text-base">Book details</SheetTitle>
-          <SheetDescription>{book.title}</SheetDescription>
-        </SheetHeader>
-        <dl className="grid flex-1 auto-rows-min gap-4 overflow-y-auto px-6 pb-4">
-          <DetailRow label="Title" value={book.title} />
-          <DetailRow label="Author" value={book.author} />
-          <DetailRow label="Language" value={book.language} />
-          <DetailRow label="Publisher" value={book.publisher} />
-          <DetailRow label="Description" value={book.description} />
-          <DetailRow label="Status" value={status} />
-          <DetailRow label="File" value={book.fileName} />
-          <DetailRow
-            label="File size"
-            value={formatBytes(book.fileSize + (book.cover?.size ?? 0))}
-          />
-          <DetailRow
-            label="Imported"
-            value={dateFormat.format(book.importedAt)}
-          />
-          <DetailRow
-            label="Last read"
-            value={
-              book.lastReadAt ? dateFormat.format(book.lastReadAt) : "Never"
-            }
-          />
-        </dl>
-        <SheetFooter>
-          <SheetClose render={<Button variant="outline">Close</Button>} />
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
-function EditSheet({
-  book,
-  open,
-  onOpenChange,
-}: {
-  book: Book
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const [title, setTitle] = useState(book.title)
-  const [author, setAuthor] = useState(book.author)
-  const [language, setLanguage] = useState(book.language ?? "")
-  const [publisher, setPublisher] = useState(book.publisher ?? "")
-  const [description, setDescription] = useState(book.description ?? "")
-  const canSave = title.trim().length > 0
-
-  async function save() {
-    await db.books.update(book.id, {
-      title: title.trim(),
-      author: author.trim() || "Unknown author",
-      language: language.trim() || undefined,
-      publisher: publisher.trim() || undefined,
-      description: description.trim() || undefined,
-    })
-    onOpenChange(false)
-  }
-
-  return (
-    <Sheet
-      open={open}
-      onOpenChange={(next) => {
-        if (next) {
-          setTitle(book.title)
-          setAuthor(book.author)
-          setLanguage(book.language ?? "")
-          setPublisher(book.publisher ?? "")
-          setDescription(book.description ?? "")
-        }
-        onOpenChange(next)
-      }}
-    >
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle className="text-base">Edit details</SheetTitle>
-          <SheetDescription>
-            Changes apply to this library only. The EPUB file is not modified.
-          </SheetDescription>
-        </SheetHeader>
-        <div className="grid flex-1 auto-rows-min gap-4 overflow-y-auto px-6 pb-4">
-          {(
-            [
-              ["Title", title, setTitle, "book-edit-title"],
-              ["Author", author, setAuthor, "book-edit-author"],
-              ["Language", language, setLanguage, "book-edit-language"],
-              ["Publisher", publisher, setPublisher, "book-edit-publisher"],
-            ] as const
-          ).map(([label, value, set, id]) => (
-            <div key={id} className="grid gap-1.5">
-              <label htmlFor={id} className="text-xs text-muted-foreground">
-                {label}
-              </label>
-              <Input
-                id={id}
-                className="h-9"
-                value={value}
-                onChange={(event) => set(event.target.value)}
-              />
-            </div>
-          ))}
-          <div className="grid gap-1.5">
-            <label
-              htmlFor="book-edit-description"
-              className="text-xs text-muted-foreground"
-            >
-              Description
-            </label>
-            <Textarea
-              id="book-edit-description"
-              className="min-h-24"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-            />
-          </div>
-        </div>
-        <SheetFooter className="flex-row gap-2">
-          <SheetClose
-            render={<Button variant="outline" className="basis-3/10" />}
-          >
-            Cancel
-          </SheetClose>
-          <Button
-            className="basis-7/10"
-            disabled={!canSave}
-            onClick={() => void save()}
-          >
-            Save changes
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
-function RemoveDialog({
-  book,
-  open,
-  onOpenChange,
-}: {
-  book: Book
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const resetBookSettings = useReaderSettings((state) => state.reset)
-  async function remove() {
-    await db.transaction("rw", db.books, db.bookFiles, async () => {
-      await db.books.delete(book.id)
-      await db.bookFiles.delete(book.id)
-    })
-    resetBookSettings(book.id)
-    onOpenChange(false)
-  }
-  return (
-    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
-      <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-black/60 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0" />
-        <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 w-[min(90vw,24rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-popover p-5 text-popover-foreground shadow-lg ring-1 ring-foreground/10 transition duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
-          <AlertDialog.Title className="font-heading text-base font-medium">
-            Remove this book?
-          </AlertDialog.Title>
-          <AlertDialog.Description className="mt-2 text-sm text-muted-foreground">
-            “{book.title}” and its reading progress will be deleted from this
-            device. You can import the EPUB again later.
-          </AlertDialog.Description>
-          <div className="mt-5 flex gap-2">
-            <AlertDialog.Close
-              render={
-                <Button variant="outline" className="basis-1/2">
-                  Cancel
-                </Button>
-              }
-            />
-            <Button
-              variant="destructive"
-              className="basis-1/2"
-              onClick={() => void remove()}
-            >
-              <HugeiconsIcon icon={Delete02Icon} />
-              Remove
-            </Button>
-          </div>
-        </AlertDialog.Popup>
-      </AlertDialog.Portal>
-    </AlertDialog.Root>
-  )
-}
 
 export function BookMenu({
   book,
@@ -267,14 +40,47 @@ export function BookMenu({
   className?: string
 }) {
   const [dialog, setDialog] = useState<Dialog>(null)
+  const [mutating, setMutating] = useState(false)
+  const [mutationError, setMutationError] = useState("")
   const coverInput = useRef<HTMLInputElement>(null)
   const finished = isFinished(book)
+  const resetBookSettings = useReaderSettings((state) => state.reset)
   const close = (next: boolean) => {
     if (!next) setDialog(null)
   }
 
+  async function mutate(action: () => Promise<void>) {
+    if (mutating) return false
+    setMutating(true)
+    setMutationError("")
+    try {
+      await action()
+      return true
+    } catch (error) {
+      setMutationError(
+        error instanceof Error ? error.message : "Could not update this book."
+      )
+      return false
+    } finally {
+      setMutating(false)
+    }
+  }
+
+  async function saveDetails(details: BookDetailsUpdate) {
+    const saved = await mutate(() => updateBookDetails(book.id, details))
+    if (saved) setDialog(null)
+    return saved
+  }
+
+  async function remove() {
+    const removed = await mutate(() => removeBook(book.id))
+    if (!removed) return
+    resetBookSettings(book.id)
+    setDialog(null)
+  }
+
   return (
-    <>
+    <div className={className}>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger
           render={
@@ -282,28 +88,41 @@ export function BookMenu({
               variant="ghost"
               size="icon-sm"
               aria-label={`Options for ${book.title}`}
-              className={className}
+              disabled={mutating}
+              className="size-5 rounded border-0 bg-background/80 text-foreground backdrop-blur-sm hover:bg-background/80 [&_svg]:size-3.5"
             />
           }
         >
           <HugeiconsIcon icon={MoreVerticalIcon} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-auto">
-          <DropdownMenuItem onClick={() => setDialog("details")}>
+          <DropdownMenuItem
+            disabled={mutating}
+            onClick={() => setDialog("details")}
+          >
             <HugeiconsIcon icon={InformationCircleIcon} />
             Details
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setDialog("edit")}>
+          <DropdownMenuItem
+            disabled={mutating}
+            onClick={() => setDialog("edit")}
+          >
             <HugeiconsIcon icon={Edit02Icon} />
             Edit details
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => coverInput.current?.click()}>
+          <DropdownMenuItem
+            disabled={mutating}
+            onClick={() => coverInput.current?.click()}
+          >
             <HugeiconsIcon icon={ImageUploadIcon} />
             Update cover
           </DropdownMenuItem>
           <DropdownMenuItem
+            disabled={mutating}
             onClick={() =>
-              void db.books.update(book.id, { progress: finished ? 0 : 1 })
+              void mutate(() =>
+                setBookStatus(book.id, finished ? "Unread" : "Finished")
+              )
             }
           >
             <HugeiconsIcon
@@ -311,8 +130,8 @@ export function BookMenu({
             />
             {finished ? "Mark as unread" : "Mark as finished"}
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem
+            disabled={mutating}
             variant="destructive"
             onClick={() => setDialog("remove")}
           >
@@ -331,21 +150,38 @@ export function BookMenu({
         onChange={(event) => {
           const file = event.target.files?.[0]
           event.target.value = ""
-          if (file?.type.startsWith("image/"))
-            void db.books.update(book.id, { cover: file })
+          if (file) void mutate(() => replaceBookCover(book.id, file))
         }}
       />
-      <DetailsSheet
+      {mutationError && !dialog && (
+        <p
+          role="alert"
+          className="text-destructive-foreground absolute right-0 bottom-full z-50 mb-1 w-56 rounded-md bg-destructive px-3 py-2 text-xs shadow"
+        >
+          {mutationError}
+        </p>
+      )}
+      <BookDetailsSheet
         book={book}
         open={dialog === "details"}
         onOpenChange={close}
       />
-      <EditSheet book={book} open={dialog === "edit"} onOpenChange={close} />
-      <RemoveDialog
+      <EditBookSheet
+        book={book}
+        open={dialog === "edit"}
+        onOpenChange={close}
+        onSave={saveDetails}
+        pending={mutating}
+        error={mutationError}
+      />
+      <RemoveBookDialog
         book={book}
         open={dialog === "remove"}
         onOpenChange={close}
+        onRemove={() => void remove()}
+        pending={mutating}
+        error={mutationError}
       />
-    </>
+    </div>
   )
 }

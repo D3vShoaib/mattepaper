@@ -14,8 +14,7 @@ export default defineConfig({
         id: "/",
         name: "Mattepaper",
         short_name: "Mattepaper",
-        description:
-          "A beautiful, local-first EPUB reader. Your books stay on your device.",
+        description: "Read EPUB books offline. Your books stay on this device.",
         lang: "en",
         dir: "ltr",
         start_url: "/",
@@ -23,8 +22,8 @@ export default defineConfig({
         display: "standalone",
         display_override: ["standalone", "minimal-ui"],
         orientation: "portrait",
-        theme_color: "#16161a",
-        background_color: "#16161a",
+        theme_color: "#121212",
+        background_color: "#121212",
         categories: ["books", "education", "entertainment"],
         prefer_related_applications: false,
         launch_handler: { client_mode: "navigate-existing" },
@@ -97,7 +96,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: [
-          "**/*.{js,css,html,ico,png,svg,woff,woff2,webmanifest}",
+          "**/*.{js,css,html,ico,png,svg,ttf,woff,woff2,webmanifest}",
         ],
         navigateFallback: "index.html",
         navigateFallbackDenylist: [/^\/api\//],
@@ -105,7 +104,6 @@ export default defineConfig({
       },
     }),
   ],
-  server: { hmr: false },
   optimizeDeps: {
     include: [
       "react",

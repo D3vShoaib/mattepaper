@@ -4,6 +4,7 @@ import { parseEpub } from "@/features/epub/foliate-adapter"
 export async function importBook(file: File) {
   if (!file.name.toLowerCase().endsWith(".epub"))
     throw new Error("Only EPUB files are supported.")
+  if (!file.size) throw new Error("This EPUB file is empty.")
   const bytes = await crypto.subtle.digest("SHA-256", await file.arrayBuffer())
   const fingerprint = Array.from(new Uint8Array(bytes), (byte) =>
     byte.toString(16).padStart(2, "0")
@@ -17,6 +18,7 @@ export async function importBook(file: File) {
       id,
       fingerprint,
       ...metadata,
+      status: "Unread",
       fileName: file.name,
       fileSize: file.size,
       importedAt: Date.now(),

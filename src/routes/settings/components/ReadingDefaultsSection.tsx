@@ -2,15 +2,15 @@ import { SettingsGroup } from "@/components/settings-group"
 import { ReaderSettingsFields } from "@/features/reading/ReaderSettingsFields"
 import {
   defaultReaderSettings,
-  useReaderSettings,
   type ReaderSettings,
-} from "@/stores/reader-settings"
+} from "@/features/reading/reader-settings"
+import { useReaderSettings } from "@/stores/reader-settings"
 
 export function ReadingDefaultsSection() {
   const defaults = useReaderSettings((state) => state.defaults)
   const update = useReaderSettings((state) => state.updateDefaults)
   return (
-    <SettingsGroup title="Reading defaults">
+    <SettingsGroup title="Reading defaults" hideTitle>
       <ReaderSettingsFields
         settings={defaults}
         onChange={update}

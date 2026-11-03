@@ -1,4 +1,4 @@
-import { BookDownloadIcon } from "@hugeicons/core-free-icons"
+import { DownloadSquare01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +11,11 @@ import {
 } from "@/components/ui/popover"
 import { usePwaInstall } from "./pwa-install"
 
-export function PwaInstallButton() {
+export function PwaInstallButton({
+  fullWidth = false,
+}: {
+  fullWidth?: boolean
+}) {
   const { canInstall, installed, isIos, install } = usePwaInstall()
 
   if (installed) return null
@@ -19,13 +23,15 @@ export function PwaInstallButton() {
   if (canInstall)
     return (
       <Button
-        variant="outline"
+        variant={fullWidth ? "default" : "outline"}
         size="icon-lg"
+        className={fullWidth ? "h-11 w-full gap-2 text-sm" : undefined}
         aria-label="Install Mattepaper"
         title="Install Mattepaper"
         onClick={() => void install()}
       >
-        <HugeiconsIcon icon={BookDownloadIcon} />
+        <HugeiconsIcon icon={DownloadSquare01Icon} />
+        {fullWidth && "Install Mattepaper"}
       </Button>
     )
 
@@ -34,14 +40,16 @@ export function PwaInstallButton() {
       <PopoverTrigger
         render={
           <Button
-            variant="outline"
+            variant={fullWidth ? "default" : "outline"}
             size="icon-lg"
+            className={fullWidth ? "h-11 w-full gap-2 text-sm" : undefined}
             aria-label="Install Mattepaper"
             title="Install Mattepaper"
           />
         }
       >
-        <HugeiconsIcon icon={BookDownloadIcon} />
+        <HugeiconsIcon icon={DownloadSquare01Icon} />
+        {fullWidth && "Install Mattepaper"}
       </PopoverTrigger>
       <PopoverContent align="end">
         <PopoverHeader>

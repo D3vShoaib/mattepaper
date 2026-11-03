@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -101,20 +99,17 @@ export function ChapterSheet({
       <SheetTrigger
         render={
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon-lg"
+            className="size-10 rounded-full [&_svg]:size-5"
             aria-label="Table of contents"
           />
         }
       >
         <HugeiconsIcon icon={LogsIcon} />
       </SheetTrigger>
-      <SheetContent
-        side="left"
-        showCloseButton={false}
-        className="w-[min(85vw,24rem)]"
-      >
-        <SheetHeader>
+      <SheetContent side="left" className="w-[min(85vw,24rem)]">
+        <SheetHeader className="pr-12">
           <SheetTitle className="text-base">Contents</SheetTitle>
           <SheetDescription>
             {chapters.length
@@ -155,9 +150,6 @@ export function ChapterSheet({
             </p>
           ) : null}
         </div>
-        <SheetFooter>
-          <SheetClose render={<Button variant="outline">Close</Button>} />
-        </SheetFooter>
       </SheetContent>
     </Sheet>
   )

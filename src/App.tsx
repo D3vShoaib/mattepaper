@@ -1,16 +1,34 @@
 import { createBrowserRouter, Link, RouterProvider } from "react-router"
+import { LibraryBigIcon } from "lucide-react"
 import { AppLayout } from "@/app/AppLayout"
-import { BookshelfPage } from "@/routes/bookshelf/BookshelfPage"
-import { ReaderPage } from "@/routes/reader/ReaderPage"
-import { SettingsPage } from "@/routes/settings/SettingsPage"
 
 const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
-      { index: true, element: <BookshelfPage /> },
-      { path: "read/:bookId", element: <ReaderPage /> },
-      { path: "settings", element: <SettingsPage /> },
+      {
+        index: true,
+        lazy: async () => {
+          const { BookshelfPage } =
+            await import("@/routes/bookshelf/BookshelfPage")
+          return { Component: BookshelfPage }
+        },
+      },
+      {
+        path: "read/:bookId",
+        lazy: async () => {
+          const { ReaderPage } = await import("@/routes/reader/ReaderPage")
+          return { Component: ReaderPage }
+        },
+      },
+      {
+        path: "settings",
+        lazy: async () => {
+          const { SettingsPage } =
+            await import("@/routes/settings/SettingsPage")
+          return { Component: SettingsPage }
+        },
+      },
       {
         path: "*",
         element: (
@@ -18,7 +36,11 @@ const router = createBrowserRouter([
             <h1 className="font-heading text-3xl font-semibold">
               Page not found
             </h1>
-            <Link to="/" className="mt-4 inline-block text-sm underline">
+            <Link
+              to="/"
+              className="mt-4 inline-flex items-center gap-2 text-sm underline"
+            >
+              <LibraryBigIcon className="size-4" aria-hidden="true" />
               Return to bookshelf
             </Link>
           </section>
